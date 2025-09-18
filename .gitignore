@@ -1,2 +1,5 @@
+# This .gitignore is just for general scope. Each project should have its own gitignore for project-specific rules.
+# Esse .gitignore é apenas para o escopo geral. Cada projeto deve ter seu próprio .gitignore para regras específicas do projeto.
+
 /docker-compose.yml
 /pgdata
