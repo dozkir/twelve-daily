@@ -1,11 +1,21 @@
+using Microsoft.EntityFrameworkCore;
+using DotNetEnv;
+
 using TwelveDaily.Api.Models;
+using TwelveDaily.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
+Env.Load(); // Carrega variáveis de ambiente do arquivo .env
+
+builder.Services.AddControllers(); // Registring Controllers
+builder.Services.AddEndpointsApiExplorer(); // Add services to the container. Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddSwaggerGen();
+
+var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
 var app = builder.Build();
 
@@ -16,19 +26,32 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseHttpsRedirection(); // O que isso faz?
+app.UseAuthorization(); // O que isso faz?
+app.MapControllers(); // Ativando os Controllers
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+// app.MapGet("/testeUsuario", () =>
+// {
+//     var user = User.test();
+//     return user;
+// })
+// .WithName("TesteUsuario")
+// .WithOpenApi();
 
-app.MapGet("/testeUsuario", () =>
+using (var scope = app.Services.CreateScope())
 {
-    var user = User.test();
-    return user;
-})
-.WithName("TesteUsuario")
-.WithOpenApi();
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        if (db.Database.CanConnect())
+            Console.WriteLine("✅ Conexão com banco OK!");
+        else
+            Console.WriteLine("❌ Não foi possível conectar ao banco.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("❌ Erro ao conectar no banco: " + ex.Message);
+    }
+}
 
 app.Run();
