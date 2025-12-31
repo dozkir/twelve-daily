@@ -1,8 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
-
-using TwelveDaily.Api.Models;
-using TwelveDaily.Api.Data;
+using TwelveDaily.Core.Application.Habits;
+using TwelveDaily.Core.Application.Habits.CreateHabit;
+using TwelveDaily.Core.Application.Habits.GetAllUserHabits;
+using TwelveDaily.Core.Application.Habits.GetHabitById;
+using TwelveDaily.Core.Application.Habits.UpdateHabit;
+//using TwelveDaily.Core.Application.Habits.DeleteHabit;
+using TwelveDaily.Core.Application.Interfaces;
+using TwelveDaily.Core.Domains.Habits;
+using TwelveDaily.Core.Infrastructure.Data;
+using TwelveDaily.Core.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +22,15 @@ builder.Services.AddSwaggerGen();
 var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION")
     ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
+builder.Services.AddScoped<CreateHabitHandler>();
+builder.Services.AddScoped<GetAllUserHabitsHandler>();
+builder.Services.AddScoped<GetHabitByIdHandler>();
+builder.Services.AddScoped<UpdateHabitHandler>();
+//builder.Services.AddScoped<DeleteHabitHandler>();
+
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+builder.Services.AddScoped<IHabitRepository, HabitRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 var app = builder.Build();
 

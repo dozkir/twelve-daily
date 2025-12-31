@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using TwelveDaily.Api.Data;
+using TwelveDaily.Core.Data;
 
 #nullable disable
 
-namespace TwelveDaily.Api.Migrations
+namespace TwelveDaily.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20250929040740_InitialCreate")]
@@ -25,7 +25,7 @@ namespace TwelveDaily.Api.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("TwelveDaily.Api.Models.Usuario", b =>
+            modelBuilder.Entity("TwelveDaily.Core.Models.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()

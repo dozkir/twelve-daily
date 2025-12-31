@@ -1,0 +1,6 @@
+@TwelveDaily.Core_HostAddress = http://localhost:5192
+
+GET {{TwelveDaily.Core_HostAddress}}/api/v1/habits
+Accept: application/json
+
+###

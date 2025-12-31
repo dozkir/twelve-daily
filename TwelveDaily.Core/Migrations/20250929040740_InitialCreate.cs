@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace TwelveDaily.Api.Migrations
+namespace TwelveDaily.Core.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

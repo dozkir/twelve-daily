@@ -4,6 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>TwelveDaily.Core</AssemblyName>
+    <RootNamespace>TwelveDaily.Core</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +18,27 @@
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Api\" />
+    <Folder Include="Application\Habits\DeleteHabit\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Domains\Validation\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Domains\Validation\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Domains\Validation\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Domains\Validation\**" />
   </ItemGroup>
 
 </Project>
