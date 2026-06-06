@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TwelveDaily.Api.Middleware;
@@ -22,7 +23,15 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Stable operationIds (Controller_Action) so the generated orval client
+    // produces clean, collision-free hook names (e.g. useHabitsList).
+    options.CustomOperationIds(apiDescription =>
+        apiDescription.ActionDescriptor is ControllerActionDescriptor descriptor
+            ? $"{descriptor.ControllerName}_{descriptor.ActionName}"
+            : null);
+});
 builder.Services.AddSignalR();
 builder.Services.AddCors(options =>
 {

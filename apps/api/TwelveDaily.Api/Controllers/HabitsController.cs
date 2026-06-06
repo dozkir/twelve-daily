@@ -16,6 +16,7 @@ public class HabitsController : ControllerBase
     public HabitsController(IMediator mediator) => _mediator = mediator;
 
     [HttpPost]
+    [ProducesResponseType<Guid>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Create([FromBody] CreateHabitRequest request)
     {
         var userId = GetUserId();
@@ -31,6 +32,7 @@ public class HabitsController : ControllerBase
     }
 
     [HttpGet]
+    [ProducesResponseType<List<HabitListItemResult>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> List()
     {
         var userId = GetUserId();
@@ -39,6 +41,7 @@ public class HabitsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [ProducesResponseType<HabitDetailResult>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDetail(Guid id)
     {
         var userId = GetUserId();
@@ -47,6 +50,7 @@ public class HabitsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateHabitRequest request)
     {
         var userId = GetUserId();
@@ -57,6 +61,7 @@ public class HabitsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(Guid id)
     {
         var userId = GetUserId();
@@ -65,6 +70,7 @@ public class HabitsController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/toggle")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Toggle(Guid id)
     {
         var userId = GetUserId();
@@ -73,6 +79,7 @@ public class HabitsController : ControllerBase
     }
 
     [HttpPut("{id:guid}/schedules")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateSchedules(Guid id, [FromBody] UpdateSchedulesRequest request)
     {
         var userId = GetUserId();
@@ -83,6 +90,7 @@ public class HabitsController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/schedules/{dayOfWeek}/toggle")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ToggleSchedule(Guid id, string dayOfWeek)
     {
         var userId = GetUserId();
@@ -92,6 +100,7 @@ public class HabitsController : ControllerBase
     }
 
     [HttpGet("daily")]
+    [ProducesResponseType<DailyHabitsResult>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDaily([FromQuery] DateOnly date)
     {
         var userId = GetUserId();

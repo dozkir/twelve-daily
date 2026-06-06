@@ -16,6 +16,7 @@ public class HabitChecksController : ControllerBase
 
     // Marca o hábito como concluído em uma data (upsert idempotente).
     [HttpPut]
+    [ProducesResponseType<HabitCheckResult>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Check(Guid habitId, [FromBody] CheckRequest request)
     {
         var userId = GetUserId();
@@ -25,6 +26,7 @@ public class HabitChecksController : ControllerBase
 
     // Desmarca o hábito em uma data (delete idempotente).
     [HttpDelete]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Uncheck(Guid habitId, [FromQuery] DateOnly date)
     {
         var userId = GetUserId();
@@ -34,6 +36,7 @@ public class HabitChecksController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("from-notification")]
+    [ProducesResponseType<HabitCheckResult>(StatusCodes.Status200OK)]
     public async Task<IActionResult> CheckFromNotification(Guid habitId, [FromBody] CheckFromNotificationRequest request)
     {
         var result = await _mediator.Send(new CheckHabitFromNotificationCommand(habitId, request.Date, request.ActionToken));

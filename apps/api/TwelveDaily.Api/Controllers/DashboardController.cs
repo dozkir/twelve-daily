@@ -15,6 +15,7 @@ public class DashboardController : ControllerBase
     public DashboardController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet("weekly")]
+    [ProducesResponseType<WeeklyDashboardResult>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetWeekly([FromQuery] DateOnly weekStart)
     {
         var userId = GetUserId();

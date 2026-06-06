@@ -16,6 +16,7 @@ public class UsersController : ControllerBase
     public UsersController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet("me")]
+    [ProducesResponseType<UserProfileResult>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetProfile()
     {
         var userId = GetUserId();
@@ -24,6 +25,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("me/timezone")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateTimezone([FromBody] UpdateTimezoneRequest request)
     {
         var userId = GetUserId();
@@ -32,6 +34,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("me/password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdatePassword([FromBody] UpdatePasswordRequest request)
     {
         var userId = GetUserId();
@@ -40,6 +43,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("push-token")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RegisterPushToken([FromBody] RegisterPushTokenRequest request)
     {
         var userId = GetUserId();
@@ -48,6 +52,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("push-test")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> SendRemotePushTest()
     {
         var userId = GetUserId();
@@ -56,6 +61,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("push-sync")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> SyncActivePushNotification()
     {
         var userId = GetUserId();

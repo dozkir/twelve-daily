@@ -14,6 +14,7 @@ public class AuthController : ControllerBase
     public AuthController(IMediator mediator) => _mediator = mediator;
 
     [HttpPost("register")]
+    [ProducesResponseType<AuthResult>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         var command = new RegisterCommand(request.Email, request.Password, request.Timezone);
@@ -22,6 +23,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [ProducesResponseType<AuthResult>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var command = new LoginCommand(request.Email, request.Password);
@@ -30,6 +32,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
+    [ProducesResponseType<AuthResult>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
     {
         var command = new RefreshTokenCommand(request.RefreshToken);
@@ -39,6 +42,7 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
     {
         var userId = GetUserId();
@@ -48,6 +52,7 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpPost("logout-all")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> LogoutAll()
     {
         var userId = GetUserId();
