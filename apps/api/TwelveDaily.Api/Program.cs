@@ -7,6 +7,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.Controllers;
+using TwelveDaily.Api.Swagger;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TwelveDaily.Api.Middleware;
@@ -31,6 +32,11 @@ builder.Services.AddSwaggerGen(options =>
         apiDescription.ActionDescriptor is ControllerActionDescriptor descriptor
             ? $"{descriptor.ControllerName}_{descriptor.ActionName}"
             : null);
+
+    // Treat C# non-nullable reference types as required in the schema, so the
+    // generated client gets tight types (e.g. string instead of string | null).
+    options.SupportNonNullableReferenceTypes();
+    options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter>();
 });
 builder.Services.AddSignalR();
 builder.Services.AddCors(options =>
