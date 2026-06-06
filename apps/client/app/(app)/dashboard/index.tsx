@@ -1,22 +1,18 @@
+import { dashboardGetWeekly } from "@twelve-daily/api-client";
 import { BlurView } from "expo-blur";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
-import { useAuth } from "@/src/auth/auth-context";
-import { makeAuthedClient } from "@/src/api/client";
 import { startOfWeekIso } from "@/src/date";
 import { colors } from "@/src/theme";
 import { Screen } from "@/src/ui/screen";
 
 export default function DashboardScreen() {
   const weekStart = startOfWeekIso(new Date());
-  const { accessToken, logout } = useAuth();
-  const client = useMemo(() => makeAuthedClient(accessToken, logout), [accessToken, logout]);
 
   const dashboardQuery = useQuery({
     queryKey: ["dashboard", weekStart],
-    queryFn: () => client.getWeeklyDashboard(weekStart)
+    queryFn: () => dashboardGetWeekly({ weekStart })
   });
 
   const data = dashboardQuery.data;

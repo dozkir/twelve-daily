@@ -1,30 +1,28 @@
+import { authLogoutAll, usersGetProfile, usersSendRemotePushTest } from "@twelve-daily/api-client";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "@/src/auth/auth-context";
-import { makeAuthedClient } from "@/src/api/client";
 import { colors } from "@/src/theme";
 import { Screen } from "@/src/ui/screen";
 
 export default function SettingsScreen() {
-  const { accessToken, logout } = useAuth();
-  const client = useMemo(() => makeAuthedClient(accessToken, logout), [accessToken, logout]);
+  const { logout } = useAuth();
 
   const profileQuery = useQuery({
     queryKey: ["profile"],
-    queryFn: () => client.getProfile()
+    queryFn: () => usersGetProfile()
   });
 
   const logoutAllMutation = useMutation({
-    mutationFn: () => client.logoutAll(),
+    mutationFn: () => authLogoutAll(),
     onSuccess: async () => {
       await logout();
     }
   });
 
   const testNotificationMutation = useMutation({
-    mutationFn: () => client.sendRemotePushTest(),
+    mutationFn: () => usersSendRemotePushTest(),
     onSuccess: () => {
       Alert.alert("Teste enviado", "A requisicao foi enviada para o backend. Se houver habito elegivel, o push remoto deve aparecer.");
     },

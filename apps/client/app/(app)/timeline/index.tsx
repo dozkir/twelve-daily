@@ -1,12 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { DailyHabitItem } from "@twelve-daily/api-client";
+import { habitChecksCheck, habitChecksUncheck, habitsGetDaily, type DayItemResult } from "@twelve-daily/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { useAuth } from "@/src/auth/auth-context";
-import { makeAuthedClient } from "@/src/api/client";
 import { getApiErrorMessage } from "@/src/api/error";
 import { buildHourRange, formatHourLabel, formatShortTime, formatTimelineDateLabel, formatTimelineDayLabel, parseTimeToMinutes, shiftIsoDate, toIsoDate } from "@/src/date";
 import { colors } from "@/src/theme";
@@ -23,7 +21,7 @@ const POPOVER_OFFSET = 10;
 type DayPeriod = "Early morning" | "Morning" | "Afternoon" | "Night";
 
 interface PositionedTimelineItem {
-  item: DailyHabitItem;
+  item: DayItemResult;
   key: string;
   top: number;
   height: number;
@@ -32,14 +30,14 @@ interface PositionedTimelineItem {
 }
 
 interface ParsedTimelineItem {
-  item: DailyHabitItem;
+  item: DayItemResult;
   startMinutes: number;
   endMinutes: number;
 }
 
-const getParsedTimelineItems = (items: DailyHabitItem[]) => {
+const getParsedTimelineItems = (items: DayItemResult[]) => {
   const validItems: ParsedTimelineItem[] = [];
-  const invalidItems: DailyHabitItem[] = [];
+  const invalidItems: DayItemResult[] = [];
 
   items.forEach((item) => {
     const startMinutes = parseTimeToMinutes(item.startTime);
@@ -58,7 +56,7 @@ const getParsedTimelineItems = (items: DailyHabitItem[]) => {
   return { validItems, invalidItems };
 };
 
-const getTimelineItemKey = (item: DailyHabitItem) => item.habitId;
+const getTimelineItemKey = (item: DayItemResult) => item.habitId;
 
 const getDayPeriod = (startMinutes: number, endMinutes: number): DayPeriod => {
   const midpoint = Math.floor((startMinutes + endMinutes) / 2);
@@ -143,21 +141,18 @@ export default function TimelineScreen() {
   const popoverAnimation = useRef(new Animated.Value(0)).current;
   const currentTimePulse = useRef(new Animated.Value(1)).current;
   const queryClient = useQueryClient();
-  const { accessToken, logout } = useAuth();
-
-  const client = useMemo(() => makeAuthedClient(accessToken, logout), [accessToken, logout]);
 
   const timelineQuery = useQuery({
     queryKey: ["daily", date],
-    queryFn: () => client.getDailyHabits(date)
+    queryFn: () => habitsGetDaily({ date })
   });
 
   const checkMutation = useMutation({
     mutationFn: async ({ habitId, isDone }: { habitId: string; isDone: boolean }) => {
       if (isDone) {
-        await client.uncheckHabit(habitId, date);
+        await habitChecksUncheck(habitId, { date });
       } else {
-        await client.checkHabit(habitId, date);
+        await habitChecksCheck(habitId, { date });
       }
     },
     onSuccess: async () => {

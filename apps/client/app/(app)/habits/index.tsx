@@ -1,23 +1,20 @@
+import { habitsDelete, habitsList, habitsToggle } from "@twelve-daily/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { useAuth } from "@/src/auth/auth-context";
-import { makeAuthedClient } from "@/src/api/client";
 import { getApiErrorMessage } from "@/src/api/error";
 import { colors } from "@/src/theme";
 import { Screen } from "@/src/ui/screen";
 
 export default function HabitsScreen() {
-  const { accessToken, logout } = useAuth();
-  const client = useMemo(() => makeAuthedClient(accessToken, logout), [accessToken, logout]);
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"active" | "inactive">("active");
 
   const habitsQuery = useQuery({
     queryKey: ["habits"],
-    queryFn: () => client.getHabitsList()
+    queryFn: () => habitsList()
   });
 
   const visibleHabits = useMemo(
@@ -34,7 +31,7 @@ export default function HabitsScreen() {
   };
 
   const toggleHabitMutation = useMutation({
-    mutationFn: (habitId: string) => client.toggleHabit(habitId),
+    mutationFn: (habitId: string) => habitsToggle(habitId),
     onSuccess: refreshHabitViews,
     onError: (error) => {
       Alert.alert("Unable to update habit", getApiErrorMessage(error));
@@ -42,7 +39,7 @@ export default function HabitsScreen() {
   });
 
   const deleteHabitMutation = useMutation({
-    mutationFn: (habitId: string) => client.deleteHabit(habitId),
+    mutationFn: (habitId: string) => habitsDelete(habitId),
     onSuccess: refreshHabitViews,
     onError: (error) => {
       Alert.alert("Unable to delete habit", getApiErrorMessage(error));

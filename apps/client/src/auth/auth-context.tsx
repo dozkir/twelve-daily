@@ -1,6 +1,14 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { AuthTokens, LoginRequest, RegisterRequest } from "@twelve-daily/api-client";
-import { createApiClient } from "@twelve-daily/api-client";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  authLogin,
+  authLogout,
+  authRefresh,
+  authRegister,
+  configureApiClient,
+  type AuthResult,
+  type LoginRequest,
+  type RegisterRequest
+} from "@twelve-daily/api-client";
 
 import { API_URL } from "@/src/config";
 import { tokenStorage } from "@/src/auth/token-storage";
@@ -17,80 +25,70 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const useAuthState = () => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isReady, setIsReady] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const hasBootstrappedRef = useRef(false);
 
-  const storeTokens = useCallback(async (tokens: AuthTokens) => {
+  // The generated client reads the token lazily through this ref, so a single
+  // axios configuration stays valid as the token changes.
+  const accessTokenRef = useRef<string | null>(null);
+  accessTokenRef.current = accessToken;
+
+  const storeTokens = useCallback(async (tokens: AuthResult) => {
     setAccessToken(tokens.accessToken);
     setRefreshToken(tokens.refreshToken);
     await tokenStorage.setRefreshToken(tokens.refreshToken);
   }, []);
 
-  return {
-    isReady,
-    setIsReady,
-    accessToken,
-    setAccessToken,
-    refreshToken,
-    setRefreshToken,
-    storeTokens
-  };
-};
+  const clearSession = useCallback(async () => {
+    setAccessToken(null);
+    setRefreshToken(null);
+    await tokenStorage.clearRefreshToken();
+  }, []);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { isReady, setIsReady, accessToken, setAccessToken, refreshToken, setRefreshToken, storeTokens } =
-    useAuthState();
-  const hasBootstrappedRef = useRef(false);
-
-  const api = useMemo(
-    () =>
-      createApiClient({
-        baseUrl: API_URL,
-        getAccessToken: () => accessToken,
-        onUnauthorized: async () => {
-          setAccessToken(null);
-          setRefreshToken(null);
-          await tokenStorage.clearRefreshToken();
-        }
-      }),
-    [accessToken, setAccessToken, setRefreshToken]
-  );
+  // Configure the shared axios instance once, before any request is fired.
+  const isConfiguredRef = useRef(false);
+  if (!isConfiguredRef.current) {
+    configureApiClient({
+      baseUrl: API_URL,
+      getAccessToken: () => accessTokenRef.current,
+      onUnauthorized: clearSession
+    });
+    isConfiguredRef.current = true;
+  }
 
   const refresh = useCallback(async () => {
     const token = refreshToken ?? (await tokenStorage.getRefreshToken());
 
     if (!token) {
-      setAccessToken(null);
-      setRefreshToken(null);
+      await clearSession();
       return;
     }
 
     try {
-      const tokens = await api.refresh(token);
+      const tokens = await authRefresh({ refreshToken: token });
       await storeTokens(tokens);
     } catch {
-      setAccessToken(null);
-      setRefreshToken(null);
-      await tokenStorage.clearRefreshToken();
+      await clearSession();
     }
-  }, [api, refreshToken, setAccessToken, setRefreshToken, storeTokens]);
+  }, [refreshToken, clearSession, storeTokens]);
 
   const login = useCallback(
     async (payload: LoginRequest) => {
-      const tokens = await api.login(payload);
+      const tokens = await authLogin(payload);
       await storeTokens(tokens);
     },
-    [api, storeTokens]
+    [storeTokens]
   );
 
   const register = useCallback(
     async (payload: RegisterRequest) => {
-      const tokens = await api.register(payload);
+      const tokens = await authRegister(payload);
       await storeTokens(tokens);
     },
-    [api, storeTokens]
+    [storeTokens]
   );
 
   const logout = useCallback(async () => {
@@ -98,14 +96,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       if (token) {
-        await api.logout(token);
+        await authLogout({ refreshToken: token });
       }
     } finally {
-      setAccessToken(null);
-      setRefreshToken(null);
-      await tokenStorage.clearRefreshToken();
+      await clearSession();
     }
-  }, [api, refreshToken, setAccessToken, setRefreshToken]);
+  }, [refreshToken, clearSession]);
 
   useEffect(() => {
     if (hasBootstrappedRef.current) {
@@ -118,7 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await refresh();
       setIsReady(true);
     })();
-  }, [refresh, setIsReady]);
+  }, [refresh]);
 
   const value: AuthContextValue = {
     isReady,
@@ -141,4 +137,3 @@ export const useAuth = () => {
 
   return context;
 };
-

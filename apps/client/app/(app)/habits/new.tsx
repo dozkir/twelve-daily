@@ -1,21 +1,18 @@
+import { habitsCreate } from "@twelve-daily/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import { useAuth } from "@/src/auth/auth-context";
-import { makeAuthedClient } from "@/src/api/client";
 import { getApiErrorMessage } from "@/src/api/error";
 import { HabitForm, getDefaultHabitFormValues, type HabitFormValues } from "@/src/habits/habit-form";
 import { buildHabitSchedulesPayload } from "@/src/habits/habit-form-values";
 
 export default function NewHabitScreen() {
-  const { accessToken, logout } = useAuth();
-  const client = useMemo(() => makeAuthedClient(accessToken, logout), [accessToken, logout]);
   const queryClient = useQueryClient();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const createMutation = useMutation({
-    mutationFn: async ({ values }: { values: HabitFormValues }) => client.createHabit({
+    mutationFn: async ({ values }: { values: HabitFormValues }) => habitsCreate({
       name: values.name,
       emoji: values.emoji,
       description: values.description?.trim() || undefined,

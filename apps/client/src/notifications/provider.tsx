@@ -1,9 +1,9 @@
+import { usersRegisterPushToken, usersSyncActivePushNotification } from "@twelve-daily/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Notifications from "expo-notifications";
 import { AppState } from "react-native";
-import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
-import { makeAuthedClient } from "@/src/api/client";
 import { useAuth } from "@/src/auth/auth-context";
 import {
   buildDeviceLabel,
@@ -16,14 +16,13 @@ import {
 } from "@/src/notifications/service";
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
-  const { accessToken, isAuthenticated, logout } = useAuth();
-  const client = useMemo(() => makeAuthedClient(accessToken, logout), [accessToken, logout]);
+  const { accessToken, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const lastRegisteredSignatureRef = useRef<string | null>(null);
 
   const syncActiveNotification = async () => {
     try {
-      await client.syncActivePushNotification();
+      await usersSyncActivePushNotification();
     } catch (error) {
       console.warn("Active push notification sync failed", error);
     }
@@ -75,7 +74,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription.remove();
     };
-  }, [isAuthenticated, client]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -100,7 +99,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        await client.registerPushToken({
+        await usersRegisterPushToken({
           token: expoPushToken,
           deviceLabel
         });
@@ -112,7 +111,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         console.warn("Push token registration skipped due to setup error", error);
       }
     })();
-  }, [accessToken, client, isAuthenticated]);
+  }, [accessToken, isAuthenticated]);
 
   return children;
 };

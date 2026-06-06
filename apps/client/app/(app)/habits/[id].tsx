@@ -1,11 +1,9 @@
-import type { HabitDetail } from "@twelve-daily/api-client";
+import { habitsGetDetail, habitsUpdate, habitsUpdateSchedules, type HabitDetailResult } from "@twelve-daily/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { useAuth } from "@/src/auth/auth-context";
-import { makeAuthedClient } from "@/src/api/client";
 import { getApiErrorMessage } from "@/src/api/error";
 import { HabitForm, type HabitFormValues } from "@/src/habits/habit-form";
 import { buildHabitFormInitialValues, buildHabitSchedulesPayload } from "@/src/habits/habit-form-values";
@@ -15,27 +13,25 @@ import { Screen } from "@/src/ui/screen";
 export default function EditHabitScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const habitId = typeof id === "string" ? id : id?.[0] ?? "";
-  const { accessToken, logout } = useAuth();
-  const client = useMemo(() => makeAuthedClient(accessToken, logout), [accessToken, logout]);
   const queryClient = useQueryClient();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const habitQuery = useQuery({
     queryKey: ["habit", habitId],
-    queryFn: () => client.getHabitDetail(habitId),
+    queryFn: () => habitsGetDetail(habitId),
     enabled: habitId.length > 0
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ values, detail }: { values: HabitFormValues; detail: HabitDetail }) => {
+    mutationFn: async ({ values, detail }: { values: HabitFormValues; detail: HabitDetailResult }) => {
       await Promise.all([
-        client.updateHabit(habitId, {
+        habitsUpdate(habitId, {
           name: values.name,
           emoji: values.emoji,
           description: values.description?.trim() || undefined,
           syncGoogleCalendar: detail.syncGoogleCalendar
         }),
-        client.updateHabitSchedules(habitId, {
+        habitsUpdateSchedules(habitId, {
           schedules: buildHabitSchedulesPayload(values)
         })
       ]);

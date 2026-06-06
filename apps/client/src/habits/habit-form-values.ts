@@ -1,4 +1,4 @@
-import type { CreateHabitScheduleRequest, HabitDetail } from "@twelve-daily/api-client";
+import type { CreateScheduleRequest, HabitDetailResult } from "@twelve-daily/api-client";
 
 import { formatShortTime } from "@/src/date";
 
@@ -66,9 +66,9 @@ const isDayOption = (value: string): value is DayOption => (
   dayOptions.includes(value as DayOption)
 );
 
-export const buildHabitFormInitialValues = (habit: HabitDetail): HabitFormValues => {
+export const buildHabitFormInitialValues = (habit: HabitDetailResult): HabitFormValues => {
   const normalizedSchedules = habit.schedules
-    .filter((schedule): schedule is HabitDetail["schedules"][number] & { dayOfWeek: DayOption } => isDayOption(schedule.dayOfWeek))
+    .filter((schedule): schedule is HabitDetailResult["schedules"][number] & { dayOfWeek: DayOption } => isDayOption(schedule.dayOfWeek))
     .sort((left, right) => dayOptions.indexOf(left.dayOfWeek) - dayOptions.indexOf(right.dayOfWeek));
   const activeSchedules = normalizedSchedules.filter((schedule) => schedule.isActive);
   const selectedSchedules = activeSchedules.length > 0 ? activeSchedules : normalizedSchedules;
@@ -100,7 +100,7 @@ export const buildHabitFormInitialValues = (habit: HabitDetail): HabitFormValues
   };
 };
 
-export const buildHabitSchedulesPayload = (values: HabitFormValues): CreateHabitScheduleRequest[] => {
+export const buildHabitSchedulesPayload = (values: HabitFormValues): CreateScheduleRequest[] => {
   if (values.useDifferentTimesByDay) {
     return dayOptions
       .filter((day) => values.daySchedules[day].enabled)
