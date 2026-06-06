@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Twelve Daily",
+    "slug": "twelve-daily",
+    "scheme": "twelvedaily",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/twelve-daily-icon.png",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      "expo-secure-store",
+      "@react-native-community/datetimepicker"
+    ],
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/twelve-daily-icon.png",
+        "backgroundColor": "#171022"
+      },
+      "googleServicesFile": "./google-services.json",
+      "package": "com.dozedecopas.twelvedaily"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/twelve-daily-icon.png"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5d1a06bb-55cf-41c0-a10c-32a4b5170db3"
+      }
+    },
+    "owner": "dozedecopas"
+  }
+}

@@ -1,0 +1,6 @@
+@TwelveDaily.Api_HostAddress = http://localhost:5275
+
+GET {{TwelveDaily.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,19 @@
+{
+  "name": "twelve-daily",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "api:generate": "orval --config orval.config.ts"
+  },
+  "devDependencies": {
+    "orval": "^7.9.0",
+    "turbo": "^2.5.0",
+    "typescript": "^5.8.3"
+  }
+}

@@ -3,6 +3,16 @@
 
 /pgdata
 
+# Claude Code (local agent state/settings)
+.claude/
+
+# Node / Turborepo / Expo
+node_modules/
+.turbo/
+dist/
+.expo/
+*.tsbuildinfo
+
 ## Ignoring Jetbrains Rider files.
 .idea/
 
