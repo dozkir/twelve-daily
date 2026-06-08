@@ -13,7 +13,7 @@ import { Screen } from "@/src/ui/screen";
 const DEFAULT_START_HOUR = 0;
 const DEFAULT_END_HOUR_EXCLUSIVE = 24;
 const HOUR_HEIGHT = 128;
-const MIN_CARD_HEIGHT = 48;
+const MIN_CARD_HEIGHT = 56;
 const CARD_LINE_HEIGHT = 18;
 const POPOVER_WIDTH = 240;
 const POPOVER_ESTIMATED_HEIGHT = 126;
@@ -182,13 +182,12 @@ export default function TimelineScreen() {
     () => getParsedTimelineItems(timelineItems),
     [timelineItems]
   );
-  const listItems = useMemo(() => {
-    return [...timelineItems].sort((left, right) => {
-      const leftStart = parseTimeToMinutes(left.startTime) ?? Number.MAX_SAFE_INTEGER;
-      const rightStart = parseTimeToMinutes(right.startTime) ?? Number.MAX_SAFE_INTEGER;
-      return leftStart - rightStart;
-    });
-  }, [timelineItems]);
+  // Reuse the same validated, start-time-sorted set as the timeline view so both
+  // views render a consistent list of items (no malformed/zero-length entries).
+  const listItems = useMemo(
+    () => validTimelineItems.map((parsed) => parsed.item),
+    [validTimelineItems]
+  );
   const startHour = DEFAULT_START_HOUR;
   const endHourExclusive = DEFAULT_END_HOUR_EXCLUSIVE;
   const hourRange = useMemo(() => buildHourRange(startHour, endHourExclusive), [endHourExclusive, startHour]);
@@ -313,6 +312,13 @@ export default function TimelineScreen() {
     setDate(nextDate);
   };
 
+  const changeViewMode = (mode: ViewMode) => {
+    // Clear any open timeline selection so the popover doesn't linger/reappear
+    // when switching views.
+    setSelectedItemKey(null);
+    setViewMode(mode);
+  };
+
   const selectedItemTimeRange = visiblePopoverItem
     ? `${formatShortTime(visiblePopoverItem.item.startTime)} - ${formatShortTime(visiblePopoverItem.item.endTime)}`
     : "";
@@ -373,14 +379,14 @@ export default function TimelineScreen() {
         <TouchableOpacity
           style={[styles.viewToggleButton, viewMode === "timeline" ? styles.viewToggleButtonActive : null]}
           activeOpacity={0.85}
-          onPress={() => setViewMode("timeline")}>
+          onPress={() => changeViewMode("timeline")}>
           <Ionicons name="time-outline" size={16} color={viewMode === "timeline" ? colors.textPrimary : colors.textMuted} />
           <Text style={[styles.viewToggleText, viewMode === "timeline" ? styles.viewToggleTextActive : null]}>Timeline</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.viewToggleButton, viewMode === "list" ? styles.viewToggleButtonActive : null]}
           activeOpacity={0.85}
-          onPress={() => setViewMode("list")}>
+          onPress={() => changeViewMode("list")}>
           <Ionicons name="list-outline" size={16} color={viewMode === "list" ? colors.textPrimary : colors.textMuted} />
           <Text style={[styles.viewToggleText, viewMode === "list" ? styles.viewToggleTextActive : null]}>List</Text>
         </TouchableOpacity>
@@ -492,7 +498,7 @@ export default function TimelineScreen() {
                     styles.agendaCard,
                     {
                       top,
-                      minHeight: height,
+                      height,
                       left: `${(column / totalColumns) * 100}%`,
                       right: `${100 - (((column + 1) / totalColumns) * 100)}%`,
                       marginLeft: column > 0 ? 4 : 0,
@@ -503,7 +509,7 @@ export default function TimelineScreen() {
                     selectedItemKey === key ? styles.cardSelected : null
                   ]}
                   onPress={() => setSelectedItemKey((current) => current === key ? null : key)}>
-                  <Text style={[styles.cardTitle, isDone ? styles.cardTitleDone : null]}>
+                  <Text style={[styles.cardTitle, isDone ? styles.cardTitleDone : null]} numberOfLines={2} ellipsizeMode="tail">
                     {item.emoji} {item.name}
                   </Text>
                 </TouchableOpacity>
@@ -676,7 +682,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     alignItems: "flex-start",
-    justifyContent: "center"
+    justifyContent: "center",
+    overflow: "hidden"
   },
   cardDone: {
     borderColor: colors.successBorder,
