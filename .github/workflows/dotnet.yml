@@ -1,4 +1,4 @@
-# This workflow will build a .NET project
+# This workflow builds and tests the .NET solution (apps/api).
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
 name: .NET
@@ -10,19 +10,29 @@ on:
     branches: [ "master" ]
 
 jobs:
+  # NOTE: the job id "build" is the required status check in the master ruleset.
+  # Do not rename it, or pull requests can never satisfy the required check.
   build:
 
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/api
 
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        # Pin the SDK to whatever global.json requires (.NET 10) instead of a hard-coded version.
+        global-json-file: global.json
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet build --no-restore --configuration Release
+    - name: Run unit tests
+      run: dotnet test TwelveDaily.UnitTests/TwelveDaily.UnitTests.csproj --no-build --configuration Release --verbosity normal
+    # Integration tests use TestContainers to spin up Postgres; Docker is preinstalled on ubuntu-latest.
+    - name: Run integration tests
+      run: dotnet test TwelveDaily.IntegrationTests/TwelveDaily.IntegrationTests.csproj --no-build --configuration Release --verbosity normal
