@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="TwelveDaily.Api/TwelveDaily.Api.csproj" />
+  <Project Path="TwelveDaily.Application/TwelveDaily.Application.csproj" />
+  <Project Path="TwelveDaily.Domain/TwelveDaily.Domain.csproj" />
+  <Project Path="TwelveDaily.Infrastructure/TwelveDaily.Infrastructure.csproj" />
+  <Project Path="TwelveDaily.IntegrationTests/TwelveDaily.IntegrationTests.csproj" />
+  <Project Path="TwelveDaily.UnitTests/TwelveDaily.UnitTests.csproj" />
+</Solution>
