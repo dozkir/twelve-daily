@@ -14,11 +14,14 @@ const DEFAULT_START_HOUR = 0;
 const DEFAULT_END_HOUR_EXCLUSIVE = 24;
 const HOUR_HEIGHT = 128;
 const MIN_CARD_HEIGHT = 48;
+const CARD_LINE_HEIGHT = 18;
 const POPOVER_WIDTH = 240;
 const POPOVER_ESTIMATED_HEIGHT = 126;
 const POPOVER_OFFSET = 10;
 
 type DayPeriod = "Early morning" | "Morning" | "Afternoon" | "Night";
+
+type ViewMode = "timeline" | "list";
 
 interface PositionedTimelineItem {
   item: DayItemResult;
@@ -131,6 +134,7 @@ const getPositionedItems = (items: ParsedTimelineItem[], startHour: number): Pos
 
 export default function TimelineScreen() {
   const [date, setDate] = useState(() => toIsoDate(new Date()));
+  const [viewMode, setViewMode] = useState<ViewMode>("timeline");
   const [actionError, setActionError] = useState<string | null>(null);
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
   const [visiblePopoverKey, setVisiblePopoverKey] = useState<string | null>(null);
@@ -178,6 +182,13 @@ export default function TimelineScreen() {
     () => getParsedTimelineItems(timelineItems),
     [timelineItems]
   );
+  const listItems = useMemo(() => {
+    return [...timelineItems].sort((left, right) => {
+      const leftStart = parseTimeToMinutes(left.startTime) ?? Number.MAX_SAFE_INTEGER;
+      const rightStart = parseTimeToMinutes(right.startTime) ?? Number.MAX_SAFE_INTEGER;
+      return leftStart - rightStart;
+    });
+  }, [timelineItems]);
   const startHour = DEFAULT_START_HOUR;
   const endHourExclusive = DEFAULT_END_HOUR_EXCLUSIVE;
   const hourRange = useMemo(() => buildHourRange(startHour, endHourExclusive), [endHourExclusive, startHour]);
@@ -358,9 +369,79 @@ export default function TimelineScreen() {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.viewToggle}>
+        <TouchableOpacity
+          style={[styles.viewToggleButton, viewMode === "timeline" ? styles.viewToggleButtonActive : null]}
+          activeOpacity={0.85}
+          onPress={() => setViewMode("timeline")}>
+          <Ionicons name="time-outline" size={16} color={viewMode === "timeline" ? colors.textPrimary : colors.textMuted} />
+          <Text style={[styles.viewToggleText, viewMode === "timeline" ? styles.viewToggleTextActive : null]}>Timeline</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.viewToggleButton, viewMode === "list" ? styles.viewToggleButtonActive : null]}
+          activeOpacity={0.85}
+          onPress={() => setViewMode("list")}>
+          <Ionicons name="list-outline" size={16} color={viewMode === "list" ? colors.textPrimary : colors.textMuted} />
+          <Text style={[styles.viewToggleText, viewMode === "list" ? styles.viewToggleTextActive : null]}>List</Text>
+        </TouchableOpacity>
+      </View>
+
       {timelineQuery.isLoading ? <ActivityIndicator color={colors.accentSoft} /> : null}
       {actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
 
+      {viewMode === "list" ? (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {listItems.length === 0 && !timelineQuery.isLoading ? (
+            <View style={styles.listEmptyState}>
+              <Text style={styles.emptyText}>No habits for this date.</Text>
+            </View>
+          ) : null}
+
+          {listItems.map((item) => {
+            const isDone = !!item.checkedAt;
+
+            return (
+              <View
+                key={item.habitId}
+                style={[
+                  styles.listRow,
+                  isDone ? styles.listRowDone : null,
+                  activeDay?.type === "future" ? styles.cardReadOnly : null
+                ]}>
+                <View style={styles.listTimeColumn}>
+                  <Text style={[styles.listStartTime, isDone ? styles.listTextDone : null]}>{formatShortTime(item.startTime)}</Text>
+                  <Text style={[styles.listEndTime, isDone ? styles.listTextDone : null]}>{formatShortTime(item.endTime)}</Text>
+                </View>
+
+                <View style={styles.listBody}>
+                  <Text style={[styles.listTitle, isDone ? styles.cardTitleDone : null]}>
+                    {item.emoji} {item.name}
+                  </Text>
+                  {item.description ? (
+                    <Text style={[styles.listDescription, isDone ? styles.listTextDone : null]}>{item.description}</Text>
+                  ) : null}
+                </View>
+
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={[
+                    styles.listCheckButton,
+                    isDone ? styles.listCheckButtonDone : null,
+                    !canCheck || checkMutation.isPending ? styles.checkButtonDisabled : null
+                  ]}
+                  disabled={!canCheck || checkMutation.isPending}
+                  onPress={() => checkMutation.mutate({ habitId: item.habitId, isDone })}>
+                  <Ionicons
+                    name={isDone ? "checkmark" : "ellipse-outline"}
+                    size={20}
+                    color={isDone ? colors.white : colors.textMuted}
+                  />
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </ScrollView>
+      ) : (
       <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.agenda, { height: agendaHeight }] }>
           <View style={styles.timeRail}>
@@ -411,7 +492,7 @@ export default function TimelineScreen() {
                     styles.agendaCard,
                     {
                       top,
-                      height,
+                      minHeight: height,
                       left: `${(column / totalColumns) * 100}%`,
                       right: `${100 - (((column + 1) / totalColumns) * 100)}%`,
                       marginLeft: column > 0 ? 4 : 0,
@@ -422,7 +503,7 @@ export default function TimelineScreen() {
                     selectedItemKey === key ? styles.cardSelected : null
                   ]}
                   onPress={() => setSelectedItemKey((current) => current === key ? null : key)}>
-                  <Text style={[styles.cardTitle, isDone ? styles.cardTitleDone : null]} numberOfLines={1}>
+                  <Text style={[styles.cardTitle, isDone ? styles.cardTitleDone : null]}>
                     {item.emoji} {item.name}
                   </Text>
                 </TouchableOpacity>
@@ -506,6 +587,7 @@ export default function TimelineScreen() {
         </View>
 
       </ScrollView>
+      )}
     </Screen>
   );
 }
@@ -594,8 +676,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     alignItems: "flex-start",
-    justifyContent: "center",
-    overflow: "hidden"
+    justifyContent: "center"
   },
   cardDone: {
     borderColor: colors.successBorder,
@@ -620,7 +701,8 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: CARD_LINE_HEIGHT,
     fontWeight: "600",
     color: colors.textPrimary,
     flexShrink: 1,
@@ -741,5 +823,101 @@ const styles = StyleSheet.create({
   checkButtonText: {
     fontWeight: "700",
     color: colors.white
+  },
+  viewToggle: {
+    flexDirection: "row",
+    alignSelf: "flex-end",
+    marginBottom: 16,
+    padding: 4,
+    gap: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface
+  },
+  viewToggleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8
+  },
+  viewToggleButtonActive: {
+    backgroundColor: colors.surfaceAlt
+  },
+  viewToggleText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.textMuted
+  },
+  viewToggleTextActive: {
+    color: colors.textPrimary
+  },
+  listEmptyState: {
+    paddingTop: 24,
+    alignItems: "center"
+  },
+  listRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface
+  },
+  listRowDone: {
+    borderColor: colors.successBorder,
+    backgroundColor: colors.successSoft
+  },
+  listTimeColumn: {
+    width: 52,
+    alignItems: "flex-start"
+  },
+  listStartTime: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.textPrimary
+  },
+  listEndTime: {
+    marginTop: 2,
+    fontSize: 12,
+    color: colors.textMuted
+  },
+  listTextDone: {
+    color: colors.successText
+  },
+  listBody: {
+    flex: 1
+  },
+  listTitle: {
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: "600",
+    color: colors.textPrimary
+  },
+  listDescription: {
+    marginTop: 2,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.textSecondary
+  },
+  listCheckButton: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt
+  },
+  listCheckButtonDone: {
+    borderColor: colors.successText,
+    backgroundColor: colors.successText
   }
 });
