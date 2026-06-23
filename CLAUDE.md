@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Twelve Daily is a daily-habit tracker: a .NET REST API drives Expo web + mobile clients, with scheduled push notifications and SignalR real-time updates. Detailed docs live in `docs/` (written in Portuguese); start at `docs/index.md`. `docs/claude.md` is a consolidated quick-reference.
+Twelve Daily is a daily-habit tracker: a .NET REST API drives Expo web + mobile clients, with scheduled push notifications (SignalR real-time updates are planned but not yet implemented). Detailed docs live in `docs/` (written in Portuguese); start at `docs/index.md`. `docs/claude.md` is a consolidated quick-reference.
 
 ## Monorepo layout
 
@@ -94,7 +94,7 @@ The model separates **Plan** (`Habit` + `HabitSchedule`, the recurring intent) f
 
 ## Frontend
 
-Expo (managed workflow) + TypeScript, Expo Router for navigation, TanStack Query (via orval) for server state, `@microsoft/signalr` for real-time, React Hook Form + Zod for forms, NativeWind for styling, `expo-notifications` for push. See `docs/architecture/frontend.md`.
+Expo (managed workflow) + TypeScript, Expo Router for navigation, TanStack Query (via orval) for server state, React Hook Form + Zod for forms, React Native `StyleSheet` + a central theme (`src/theme.ts`) for styling, `expo-notifications`/`@notifee/react-native` for push. Real-time via `@microsoft/signalr` is planned but not yet wired up. See `docs/architecture/frontend.md`.
 
 ## Note on the in-progress restructure
 

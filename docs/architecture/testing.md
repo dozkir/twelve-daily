@@ -22,20 +22,25 @@ Testam lógica isolada, sem dependências externas (banco, HTTP, clock).
 | Handlers | Lógica de Commands/Queries com repositórios mockados |
 | Validators | Regras de validação do FluentValidation |
 
-### Exemplo de estrutura
+### Estrutura atual
 ```
 TwelveDaily.UnitTests/
   Domain/
+    UserTests.cs
     HabitTests.cs
-    HabitInstanceTests.cs
-  Application/
-    Habits/
-      CreateHabitHandlerTests.cs
-      CompleteHabitInstanceHandlerTests.cs
-    Auth/
-      LoginHandlerTests.cs
+    HabitScheduleTests.cs
+    HabitCheckTests.cs
+    RefreshTokenTests.cs
+  Handlers/
+    AuthHandlerTests.cs
+    HabitHandlerTests.cs
+    ScheduleHandlerTests.cs
+    CheckHandlerTests.cs
+    QueryHandlerTests.cs
+    UserHandlerTests.cs
   Validators/
-    CreateHabitValidatorTests.cs
+    AuthValidatorTests.cs
+    HabitValidatorTests.cs
 ```
 
 ---
@@ -53,23 +58,29 @@ Testam o endpoint completo — do HTTP até o banco de dados real.
 ### O que testar
 - Fluxo completo de autenticação (register → login → refresh → logout)
 - CRUD de hábitos e schedules
-- Check de instâncias (incluindo validações de data futura)
-- Criação manual de instâncias em dias passados
+- Check/uncheck de hábitos `(HabitId, Date)` — incluindo a proibição de data futura
+- Timeline reconstruída (range D-3 a D+3, tipos past/today/future)
 - Isolamento entre usuários (usuário A não acessa dados do usuário B)
 
-### Exemplo de estrutura
+### Estrutura atual
 ```
 TwelveDaily.IntegrationTests/
+  IntegrationTestBase.cs       ← setup do TestContainers + WebApplicationFactory
   Auth/
     RegisterTests.cs
     LoginTests.cs
-    RefreshTokenTests.cs
+    TokenTests.cs
   Habits/
-    CreateHabitTests.cs
-    GetDailyHabitsTests.cs
-    CompleteHabitInstanceTests.cs
-  Infrastructure/
-    IntegrationTestBase.cs   ← setup do TestContainers + WebApplicationFactory
+    HabitCrudTests.cs
+    ScheduleTests.cs
+    CheckTests.cs
+    TimelineTests.cs
+  Dashboard/
+    DashboardTests.cs
+  Isolation/
+    UserIsolationTests.cs
+  Profile/
+    ProfileTests.cs
 ```
 
 ---

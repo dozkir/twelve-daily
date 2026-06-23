@@ -16,7 +16,7 @@
 | CQRS | MediatR |
 | Validação | FluentValidation + MediatR Pipeline Behavior |
 | Jobs | Hangfire + Hangfire.PostgreSql |
-| Real-time | SignalR |
+| Real-time | SignalR *(planejado — ainda não implementado)* |
 | Auth | JWT 15min + Refresh Token 7 dias |
 | Push | Expo Push Notifications |
 | Integração | Google Calendar API (OAuth2) |

@@ -251,8 +251,10 @@ Estes documentos **foram revisados** para o modelo de check (implementação con
 - ✅ `docs/specs/dashboard.md`
 - ✅ `docs/architecture/frontend.md`
 - ✅ `docs/claude.md`, `CLAUDE.md` (raiz), `docs/architecture/backend.md`, `docs/specs/google-calendar.md` (banner de adiamento)
+- ✅ `docs/summary.md`, `docs/index.md`, `docs/architecture/testing.md`
+- ✅ `docs/roadmap.md`, `docs/push-notifications-implementation.md`, `docs/push-notifications-file-breakdown.md` (banner histórico — implementação concluída)
 
-> Ainda **não revisados** (notas de implementação/históricas, baixa prioridade): `docs/push-notifications-implementation.md`, `docs/push-notifications-file-breakdown.md`, `docs/roadmap.md`, `docs/index.md`, `docs/architecture/testing.md`.
+> Todos os documentos foram revisados para o modelo de check. Os guias de push notifications e o roadmap receberam um **banner histórico** em vez de reescrita integral, por serem notas de planejamento/implementação já concluídas.
 
 ---
 
