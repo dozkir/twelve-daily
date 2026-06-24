@@ -1,5 +1,7 @@
 # Implementação — Push Notifications Persistentes
 
+> ⚠️ **Documento histórico (guia de implementação).** A funcionalidade descrita aqui **já foi implementada** no backend (`PushNotificationOrchestrator`, `PushNotificationJobRunner`, `ExpoPushNotificationService`, `PushNotificationActionTokenService`) e no cliente (`apps/client/src/notifications/`). Além disso, foi escrito sobre o modelo antigo de `HabitInstance`: onde o texto cita "instância", `habitInstanceId`, `CompletedAt` ou `POST /habit-instances/{id}/complete-from-notification`, o modelo atual usa um **check** `(HabitId, Date)` e o endpoint real é `POST /habits/{habitId}/check/from-notification`. Não há mais "job de geração de instâncias" — o orquestrador **auto-agenda** o próximo "acordar". Ver [habit-check-refactor](specs/habit-check-refactor.md) e [domain/flows.md](domain/flows.md) para o fluxo vigente.
+
 ## Objetivo
 
 Implementar uma experiência de push notification focada no **próximo hábito do usuário**.

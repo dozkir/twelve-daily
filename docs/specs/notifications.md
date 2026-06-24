@@ -76,7 +76,7 @@ Response 204
 - O recompute do usuário **auto-agenda** o próximo "acordar" na próxima fronteira relevante (ativação de uma ocorrência futura ou fim da ocorrência ativa) — encadeando o ciclo sem jobs por instância
 - Ao dar/desfazer check, criar/editar/alternar hábito ou alterar schedule, o backend recalcula imediatamente o próximo hábito elegível
 - Persistência no PostgreSQL — jobs sobrevivem a reinicializações
-- Dashboard protegido por autenticação básica (usuário/senha via variável de ambiente)
+- Dashboard exposto em `/hangfire` **apenas no ambiente Development** (filtro de autorização atual libera o acesso). As variáveis `HANGFIRE_USER`/`HANGFIRE_PASSWORD` existem no `.env`/compose mas a proteção por autenticação básica ainda **não está implementada**
 
 ### Ciclo de Vida da Notificação
 1. O backend identifica o próximo hábito não concluído do usuário.
@@ -90,7 +90,9 @@ Response 204
 
 ## Real-time (SignalR)
 
-### Hub
+> ⚠️ **Planejado — ainda não implementado.** O backend chama `AddSignalR()` em `Program.cs`, mas **nenhum Hub está mapeado** e o cliente ainda não usa `@microsoft/signalr`. A seção abaixo descreve o alvo. Hoje a atualização da UI após um check depende da invalidação das queries do TanStack Query no próprio dispositivo, não de eventos em tempo real entre dispositivos.
+
+### Hub (alvo)
 - Endpoint: `/hubs/habits`
 - Autenticação: JWT via query string (`?access_token=...`) ou header
 

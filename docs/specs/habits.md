@@ -107,10 +107,11 @@ PATCH  /habits/{id}/toggle  → alterna Habit.IsActive
 ## CRUD de HabitSchedules
 
 ```
-GET    /habits/{id}/schedules                         → lista schedules do hábito
 PUT    /habits/{id}/schedules                         → substitui todos os schedules (upsert por DayOfWeek)
 PATCH  /habits/{id}/schedules/{dayOfWeek}/toggle      → alterna HabitSchedule.IsActive
 ```
+
+> Não há endpoint dedicado de leitura de schedules — eles vêm embutidos em `GET /habits/{id}` (detalhe do hábito).
 
 ### Body do PUT /habits/{id}/schedules
 ```json

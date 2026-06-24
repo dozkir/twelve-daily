@@ -1,28 +1,34 @@
 # Infraestrutura — CI/CD
 
 ## Repositório
-GitHub (monorepo) — todos os apps e packages no mesmo repositório.
+GitHub (monorepo) — todos os apps e packages no mesmo repositório. Branch padrão: **`master`**.
+
+> **Estado atual:** apenas o **pipeline de build/teste** abaixo está implementado (`.github/workflows/dotnet.yml`). Os pipelines de **deploy** (Fly.io / Azure / EAS) descritos mais adiante são **planejados — ainda não implementados**.
 
 ---
 
-## Pipeline: Pull Request
+## Pipeline: Build & Test ✅
 
-Disparado em todo PR aberto para `main`.
+Disparado em todo push e PR para `master` (`.github/workflows/dotnet.yml`).
 
 ```yaml
 jobs:
-  test:
+  # O id do job é "build" — é o status check obrigatório no ruleset de master.
+  build:
+    - dotnet restore
+    - dotnet build --configuration Release
     - dotnet test TwelveDaily.UnitTests
     - dotnet test TwelveDaily.IntegrationTests  # requer Docker no runner
 ```
 
-> GitHub Actions runners já têm Docker instalado — TestContainers funciona sem configuração extra.
+> GitHub Actions runners (`ubuntu-latest`) já têm Docker instalado — TestContainers funciona sem configuração extra.
+> ⚠️ Não renomeie o job `build`: ele é o status check obrigatório do ruleset de `master`.
 
 ---
 
-## Pipeline: Merge na `main`
+## Pipeline: Merge na `master` *(planejado)*
 
-Disparado ao fazer merge em `main`.
+Disparado ao fazer merge em `master`.
 
 ```yaml
 jobs:

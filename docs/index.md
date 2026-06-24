@@ -4,7 +4,7 @@
 Aplicação de rastreamento de hábitos diários focada em rotina pessoal.
 - API REST que alimenta clientes **web** e **mobile**
 - Notificações push agendadas por hábito/horário
-- Atualizações em tempo real via SignalR
+- Atualizações em tempo real via SignalR *(planejado — ainda não implementado)*
 
 ---
 
@@ -19,7 +19,7 @@ Aplicação de rastreamento de hábitos diários focada em rotina pessoal.
 | CQRS | MediatR |
 | Validação | FluentValidation + MediatR Pipeline Behavior |
 | Jobs | Hangfire + Hangfire.PostgreSql |
-| Real-time | SignalR |
+| Real-time | SignalR *(planejado — ainda não implementado)* |
 | Auth | JWT (Access Token) + Refresh Token |
 | Push | Expo Push Notifications |
 | Deploy | Fly.io (API + DB) + Azure Static Web Apps (Web) |
@@ -40,14 +40,14 @@ Aplicação de rastreamento de hábitos diários focada em rotina pessoal.
 |---|---|
 | [domain/entities.md](domain/entities.md) | Entidades, campos, tipos e relações |
 | [domain/rules.md](domain/rules.md) | Regras de negócio e separação Plano × Realidade |
-| [domain/flows.md](domain/flows.md) | Fluxos do sistema (geração de instâncias, check, etc.) |
+| [domain/flows.md](domain/flows.md) | Fluxos do sistema (reconstrução da rotina, check, notificações, etc.) |
 
 ### Especificações de Feature
 | Documento | Conteúdo |
 |---|---|
 | [specs/auth.md](specs/auth.md) | Autenticação, JWT, Refresh Token |
 | [specs/habit-check-refactor.md](specs/habit-check-refactor.md) | RFC da mudança conceitual: hábitos, checks, timeline, notificações e dashboard |
-| [specs/habits.md](specs/habits.md) | Hábitos, schedules, instâncias, navegação por dias |
+| [specs/habits.md](specs/habits.md) | Hábitos, schedules, checks, navegação por dias |
 | [specs/notifications.md](specs/notifications.md) | Push notifications e real-time (SignalR) |
 | [specs/google-calendar.md](specs/google-calendar.md) | Integração com Google Calendar |
 | [specs/dashboard.md](specs/dashboard.md) | Dashboard semanal |
@@ -56,7 +56,7 @@ Aplicação de rastreamento de hábitos diários focada em rotina pessoal.
 | Documento | Conteúdo |
 |---|---|
 | [architecture/backend.md](architecture/backend.md) | Clean Architecture, CQRS, estrutura do repositório |
-| [architecture/frontend.md](architecture/frontend.md) | Expo, orval, NativeWind, especificação de telas |
+| [architecture/frontend.md](architecture/frontend.md) | Expo, orval, estilo (StyleSheet/tema), especificação de telas |
 | [architecture/testing.md](architecture/testing.md) | TDD, testes unitários e de integração |
 
 ### Infraestrutura

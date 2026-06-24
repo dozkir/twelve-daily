@@ -8,10 +8,10 @@
 | Linguagem | TypeScript |
 | Navegação | Expo Router |
 | Server state | TanStack Query (gerado via orval) |
-| Real-time | `@microsoft/signalr` |
+| Real-time | `@microsoft/signalr` *(planejado — ainda não adicionado ao cliente)* |
 | Formulários | React Hook Form + Zod |
-| Estilo | NativeWind (Tailwind para React Native) |
-| Push Notifications | `expo-notifications` |
+| Estilo | `StyleSheet` do React Native + tema central (`src/theme.ts`) |
+| Push Notifications | `expo-notifications` + `@notifee/react-native` + `expo-task-manager` |
 | Geração de cliente API | orval |
 
 ---
@@ -27,15 +27,23 @@
 - Configuração em `orval.config.ts` na raiz do monorepo
 
 ```ts
-// Exemplo de uso no front (cliente em packages/api-client)
-const client = makeAuthedClient(accessToken, logout)
+// Exemplo de uso no front — hooks TanStack Query gerados pelo orval
+import {
+  useHabitsGetDaily,
+  useHabitChecksCheck,
+  useHabitChecksUncheck,
+} from '@twelve-daily/api-client'
 
-const daily = await client.getDailyHabits('2026-03-27')
-await client.checkHabit(habitId, '2026-03-27')   // upsert do check do dia
-await client.uncheckHabit(habitId, '2026-03-27')  // desfaz
+const { data: daily } = useHabitsGetDaily({ date: '2026-03-27' })
+
+const check = useHabitChecksCheck()
+check.mutate({ habitId, data: { date: '2026-03-27' } })   // upsert do check do dia
+
+const uncheck = useHabitChecksUncheck()
+uncheck.mutate({ habitId, params: { date: '2026-03-27' } }) // desfaz
 ```
 
-> **Nota:** hoje `packages/api-client` é um wrapper manual (não gerado por orval). A pipeline orval acima é o alvo; quando ativada, `packages/api-client/src/generated/` passa a ser sobrescrito e nunca editado à mão.
+> **Nota:** `packages/api-client/src/generated/` já é gerado pelo orval a partir do OpenAPI da API (tipos em `model/` + hooks em `client.ts`, com `customInstance` em `src/http/mutator.ts`). Esse diretório nunca é editado à mão — rode `npm run api:generate` (com a API no ar) após mudar qualquer DTO/endpoint.
 
 ---
 

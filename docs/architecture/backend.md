@@ -46,12 +46,12 @@ TwelveDaily.Infrastructure
 - Migrations
 - Implementação JWT + Refresh Token
 - Implementação Hangfire (jobs, scheduling)
-- Implementação Expo Push Notifications
-- Implementação Google Calendar API (OAuth2 + criação de eventos)
+- Implementação Expo Push Notifications (orquestrador + job runner + action token)
+- Implementação Google Calendar API (OAuth2) — **adiada**: existe apenas a interface `IGoogleCalendarService` em `Application`, sem implementação concreta ainda (ver [habit-check-refactor](../specs/habit-check-refactor.md) §10.4)
 
 ### TwelveDaily.Api
 - Controllers (thin — apenas delegam para MediatR)
-- SignalR Hubs *(o Hub fica na Api — é parte da interface de entrada, não de infraestrutura)*
+- SignalR Hubs *(planejado — `AddSignalR()` já está em `Program.cs`, mas nenhum Hub foi mapeado ainda; quando criado, fica na Api — é parte da interface de entrada, não de infraestrutura)*
 - `Program.cs` (configuração de DI, middlewares, Swagger)
 - `appsettings.json`
 

@@ -1,5 +1,7 @@
 # Twelve Daily — Roadmap de Desenvolvimento
 
+> ⚠️ **Documento histórico.** Este roadmap foi escrito sobre o modelo antigo de `HabitInstance` (geração de instâncias, `startToday`, check por instância). Esse modelo foi **substituído** pelo modelo de **check** `(HabitId, Date)` sem materialização — ver [habit-check-refactor](specs/habit-check-refactor.md). Itens que mencionam "instância", "gerar rotina", `startToday`, `CompletedAt` ou `HabitInstance` refletem o planejamento da época, não o código atual. Para o estado atual do domínio, consulte [domain/](domain/) e [specs/](specs/).
+
 ## Fases
 
 ```
@@ -253,9 +255,9 @@ Implementar o código para fazer os testes passarem.
 
 ## Fase 6 — CI/CD
 
-### 6.1 — Pipeline de PR
-- [ ] GitHub Actions: `dotnet test` (unit + integration) em todo PR
-- [ ] Verificar que TestContainers funciona no runner GitHub
+### 6.1 — Pipeline de PR ✅
+- [x] GitHub Actions (`.github/workflows/dotnet.yml`): build + `dotnet test` (unit + integration) em todo push/PR para `master` — job `build` é o status check obrigatório do ruleset
+- [x] Verificar que TestContainers funciona no runner GitHub (Docker pré-instalado no `ubuntu-latest`)
 
 ### 6.2 — Pipeline de Deploy (merge na main)
 - [ ] Build da imagem Docker da API
@@ -286,6 +288,8 @@ Fase 2  ✅  Testes unitários — RED (148 testes, 135 falhando)
 Fase 3  ✅  Testes de integração — RED
 Fase 4  ✅  Back-end — GREEN (148/148 testes unitários passando)
 Fase 5  ✅  Front-end (MVP — setup, auth, timeline, habits list, dashboard, settings)
-Fase 6  ⬜  CI/CD e deploy
+Fase 6  🟡  CI/CD — pipeline de PR (build + testes) pronto; deploy (Fly.io / Azure / EAS) pendente
 ```
+
+> **Nota pós-MVP:** após a Fase 5, o domínio migrou do modelo de `HabitInstance` para o modelo de **check** (ver [habit-check-refactor](specs/habit-check-refactor.md)) e as **push notifications** (orquestrador + jobs Hangfire + Expo Push) foram implementadas no backend e no cliente. O **SignalR/real-time** segue planejado, ainda não implementado.
 

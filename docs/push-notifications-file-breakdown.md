@@ -1,5 +1,7 @@
 # Breakdown Técnico — Push Notifications por Projeto/Arquivo
 
+> ⚠️ **Documento histórico (planejamento).** Escrito quando a feature ainda não existia e sobre o modelo antigo de `HabitInstance`. A funcionalidade **já foi implementada** — ver o "Estado atual" abaixo e os arquivos reais em `apps/api/TwelveDaily.Infrastructure/Services/` e `apps/client/src/notifications/`. Onde o texto cita "instância"/`HabitInstanceId`, o modelo vigente usa **check** `(HabitId, Date)` e o endpoint `POST /habits/{habitId}/check/from-notification`. Ver [habit-check-refactor](specs/habit-check-refactor.md).
+
 ## Objetivo
 
 Mapear, de forma prática, **onde** a funcionalidade de notificações push persistentes deve ser implementada no monorepo e **o que** precisa ser criado, alterado ou validado em cada arquivo.
@@ -13,23 +15,26 @@ Este documento complementa:
 
 ## Estado atual resumido
 
-### Já existe no backend
-- `RegisterPushTokenCommand` em `apps/api/TwelveDaily.Application/Users/Commands/UserCommands.cs`
-- `RegisterPushTokenHandler` em `apps/api/TwelveDaily.Application/Users/Handlers/UserHandlers.cs`
-- entidade `PushToken` em `apps/api/TwelveDaily.Domain/Entities/PushToken.cs`
-- contrato `IPushTokenRepository` em `apps/api/TwelveDaily.Domain/Interfaces/IPushTokenRepository.cs`
-- repositório `PushTokenRepository` em `apps/api/TwelveDaily.Infrastructure/Repositories/PushTokenRepository.cs`
-- `DbSet<PushToken>` em `apps/api/TwelveDaily.Infrastructure/Data/AppDbContext.cs`
-- DI do repositório em `apps/api/TwelveDaily.Infrastructure/DependencyInjection.cs`
+> Atualizado: a feature está implementada. O conteúdo das seções seguintes é o planejamento original e pode citar nomes/arquivos sugeridos que diferem dos finais.
 
-### Ainda não existe ou não foi encontrado
-- endpoint HTTP `POST /users/push-token` em `UsersController`
-- cliente mobile com `expo-notifications`
-- registro de token no app
-- serviço de envio via Expo Push API
-- jobs do Hangfire
-- ação `Check` sem abrir o app
-- promoção da próxima notificação
+### Backend (implementado)
+- `PushToken` + `RegisterPushTokenCommand`/`Handler` + `IPushTokenRepository`/`PushTokenRepository` + `DbSet<PushToken>`
+- endpoint `POST /users/push-token` (e `POST /users/push-test`, `POST /users/push-sync`) em `UsersController`
+- envio via Expo Push API: `Infrastructure/Services/ExpoPushNotificationService.cs` (`IPushNotificationService`)
+- orquestração do próximo hábito: `PushNotificationOrchestrator.cs` (`IPushNotificationOrchestrator`) + `PushNotificationJobRunner.cs`
+- token de ação assinado: `PushNotificationActionTokenService.cs` (`IPushNotificationActionTokenService`)
+- ação `Check` anônima sem abrir o app: `POST /habits/{habitId}/check/from-notification` (`HabitChecksController`)
+- Hangfire configurado em `Program.cs`; o recompute **auto-agenda** o próximo "acordar" (sem job de geração de instâncias)
+- recálculo do próximo hábito disparado em check/uncheck, criar/editar/toggle hábito e alterar schedule
+
+### Cliente (implementado)
+- `expo-notifications` + `@notifee/react-native` + `expo-task-manager` no `apps/client/package.json`
+- registro de token, recepção e ciclo de vida em `apps/client/src/notifications/` (`provider.tsx`, `service.ts`, `background.ts`, `constants.ts`, `types.ts`)
+
+### Ainda pendente / a refinar
+- persistência Android refinada (validar limites do `expo-notifications`/`notifee`)
+- experiência best-effort no iOS
+- observabilidade (receipts da Expo, métricas) e tratamento de tokens inválidos
 
 ---
 
