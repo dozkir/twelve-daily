@@ -15,14 +15,14 @@ Aplicação de rastreamento de hábitos diários focada em rotina pessoal.
 | Runtime | .NET 10 / C# 13 |
 | API | ASP.NET Core Web API |
 | ORM | Entity Framework Core |
-| Banco | PostgreSQL (Docker local / Fly.io Postgres em produção) |
+| Banco | PostgreSQL (container Docker — local e em produção no `onze`, dedicado ao app) |
 | CQRS | MediatR |
 | Validação | FluentValidation + MediatR Pipeline Behavior |
 | Jobs | Hangfire + Hangfire.PostgreSql |
 | Real-time | SignalR *(planejado — ainda não implementado)* |
 | Auth | JWT (Access Token) + Refresh Token |
 | Push | Expo Push Notifications |
-| Deploy | Fly.io (API + DB) + Azure Static Web Apps (Web) |
+| Deploy | Self-hosted no `onze` (Docker Compose + Caddy); imagens via ghcr.io; mobile via EAS |
 | Front-end | Expo (Managed Workflow) + TypeScript |
 | Monorepo | Turborepo |
 | Geração de tipos | orval (gera tipos TS + hooks TanStack Query a partir do OpenAPI) |
@@ -51,13 +51,18 @@ Aplicação de rastreamento de hábitos diários focada em rotina pessoal.
 | [specs/notifications.md](specs/notifications.md) | Push notifications e real-time (SignalR) |
 | [specs/google-calendar.md](specs/google-calendar.md) | Integração com Google Calendar |
 | [specs/dashboard.md](specs/dashboard.md) | Dashboard semanal |
+| [specs/i18n.md](specs/i18n.md) | Internacionalização (PT/EN/ES) — *planejado* |
 
 ### Arquitetura
 | Documento | Conteúdo |
 |---|---|
-| [architecture/backend.md](architecture/backend.md) | Clean Architecture, CQRS, estrutura do repositório |
-| [architecture/frontend.md](architecture/frontend.md) | Expo, orval, estilo (StyleSheet/tema), especificação de telas |
+| [architecture/backend.md](architecture/backend.md) | Clean Architecture, CQRS, design patterns, convenções de clean code |
+| [architecture/frontend.md](architecture/frontend.md) | Expo, feature-based, hooks por feature, query keys, orval, telas |
 | [architecture/testing.md](architecture/testing.md) | TDD, testes unitários e de integração |
+
+> **Convenções por app** (carregadas ao trabalhar em cada diretório):
+> [`apps/api/CLAUDE.md`](../apps/api/CLAUDE.md) (backend) e
+> [`apps/client/CLAUDE.md`](../apps/client/CLAUDE.md) (frontend).
 
 ### Infraestrutura
 | Documento | Conteúdo |
@@ -65,6 +70,7 @@ Aplicação de rastreamento de hábitos diários focada em rotina pessoal.
 | [infrastructure/hosting.md](infrastructure/hosting.md) | Hospedagem, stack gratuita, banco de dados |
 | [infrastructure/cicd.md](infrastructure/cicd.md) | CI/CD com GitHub Actions |
 | [infrastructure/containers.md](infrastructure/containers.md) | Docker, docker-compose |
+| [infrastructure/deployment.md](infrastructure/deployment.md) | Plano de deploy & CD na máquina `onze` (Debian/Proxmox, Docker Compose + Cloudflare Tunnel) |
 
 ### Desenvolvimento
 | Documento | Conteúdo |

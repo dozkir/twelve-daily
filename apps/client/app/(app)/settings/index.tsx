@@ -1,35 +1,16 @@
-import { authLogoutAll, usersGetProfile, usersSendRemotePushTest } from "@twelve-daily/api-client";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "@/src/auth/auth-context";
+import { useLogoutAllMutation, useProfileQuery, useSendTestPushMutation } from "@/src/settings/queries";
 import { colors } from "@/src/theme";
 import { Screen } from "@/src/ui/screen";
 
 export default function SettingsScreen() {
   const { logout } = useAuth();
 
-  const profileQuery = useQuery({
-    queryKey: ["profile"],
-    queryFn: () => usersGetProfile()
-  });
-
-  const logoutAllMutation = useMutation({
-    mutationFn: () => authLogoutAll(),
-    onSuccess: async () => {
-      await logout();
-    }
-  });
-
-  const testNotificationMutation = useMutation({
-    mutationFn: () => usersSendRemotePushTest(),
-    onSuccess: () => {
-      Alert.alert("Teste enviado", "A requisicao foi enviada para o backend. Se houver habito elegivel, o push remoto deve aparecer.");
-    },
-    onError: () => {
-      Alert.alert("Erro", "Falha ao acionar o teste remoto de notificacao.");
-    }
-  });
+  const profileQuery = useProfileQuery();
+  const logoutAllMutation = useLogoutAllMutation();
+  const testNotificationMutation = useSendTestPushMutation();
 
   return (
     <Screen title="Settings" subtitle="Profile and security">
@@ -46,7 +27,10 @@ export default function SettingsScreen() {
 
       <TouchableOpacity
         style={styles.testNotificationButton}
-        onPress={() => testNotificationMutation.mutate()}
+        onPress={() => testNotificationMutation.mutate(undefined, {
+          onSuccess: () => Alert.alert("Teste enviado", "A requisicao foi enviada para o backend. Se houver habito elegivel, o push remoto deve aparecer."),
+          onError: () => Alert.alert("Erro", "Falha ao acionar o teste remoto de notificacao.")
+        })}
         disabled={testNotificationMutation.isPending}
       >
         <Text style={styles.buttonText}>
@@ -54,7 +38,7 @@ export default function SettingsScreen() {
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.logoutAllButton} onPress={() => logoutAllMutation.mutate()}>
+      <TouchableOpacity style={styles.logoutAllButton} onPress={() => logoutAllMutation.mutate(undefined, { onSuccess: () => logout() })}>
         <Text style={styles.buttonText}>Logout all devices</Text>
       </TouchableOpacity>
     </Screen>

@@ -3,7 +3,7 @@
 ## Repositório
 GitHub (monorepo) — todos os apps e packages no mesmo repositório. Branch padrão: **`master`**.
 
-> **Estado atual:** apenas o **pipeline de build/teste** abaixo está implementado (`.github/workflows/dotnet.yml`). Os pipelines de **deploy** (Fly.io / Azure / EAS) descritos mais adiante são **planejados — ainda não implementados**.
+> **Estado atual:** apenas o **pipeline de build/teste** abaixo está implementado (`.github/workflows/dotnet.yml`). Os pipelines de **deploy** (self-hosted no `onze` via Cloudflare Tunnel + EAS) descritos mais adiante são **planejados — ainda não implementados**. O plano detalhado de deploy/CD está em [deployment.md](deployment.md).
 
 ---
 
@@ -26,22 +26,28 @@ jobs:
 
 ---
 
-## Pipeline: Merge na `master` *(planejado)*
+## Pipeline: Deploy no `onze` *(planejado)*
 
-Disparado ao fazer merge em `master`.
+Disparado ao concluir o build/test com sucesso em `master`. Modelo **image-based**
+(detalhes e esboço do workflow em [deployment.md](deployment.md) §8):
 
 ```yaml
 jobs:
-  deploy-api:
-    - Build da imagem Docker da API
-    - Push para GitHub Container Registry (ghcr.io)
-    - Deploy para Fly.io via flyctl
+  build-images:                       # roda na nuvem do GitHub
+    - Build da imagem Docker da API → push GitHub Container Registry (ghcr.io)
+    - Build da Web (expo export) → imagem estática (nginx) → push ghcr.io
 
-  deploy-web:
-    - npx orval         ← regenera packages/api-client/ (garante tipos sincronizados)
-    - npm run build     ← npx expo export --platform web
-    - Deploy para Azure Static Web Apps
+  deploy:                             # roda em self-hosted runner NO onze
+    - cd /srv/twelve-daily
+        docker compose pull        # baixa as imagens novas do ghcr.io
+        docker compose up -d        # recria os containers atualizados
+        docker image prune -f       # limpa imagens antigas
 ```
+
+> ⚠️ Como o `onze` usa **Cloudflare Tunnel** (sem portas de entrada), o GitHub na nuvem **não**
+> consegue fazer SSH direto nele. O deploy roda num **self-hosted runner** instalado no `onze`
+> (que conecta de saída ao GitHub). Alternativa: SSH via Cloudflare. Ver [deployment.md](deployment.md) §8.
+> Sem Fly.io/Azure — tudo no host self-hosted.
 
 ---
 
@@ -64,8 +70,12 @@ jobs:
 
 | Secret | Usado em |
 |---|---|
-| `FLY_API_TOKEN` | Deploy para Fly.io |
-| `AZURE_STATIC_WEB_APPS_API_TOKEN` | Deploy para Azure Static Web Apps |
-| `EXPO_TOKEN` | EAS Build autenticado |
-| `GHCR_TOKEN` | Push de imagens para ghcr.io |
+| `EXPO_PUBLIC_API_URL` | URL da API embutida no build da Web (`https://api.twelvedaily.doze.dev.br`) |
+| `EXPO_TOKEN` | EAS Build autenticado (mobile) |
+
+> Para publicar imagens no **ghcr.io** dentro do próprio repositório, o `GITHUB_TOKEN`
+> automático já basta (com permissão `packages: write`) — não é preciso um token manual.
+> Com **self-hosted runner** no `onze`, **não** são necessários secrets `SSH_*`: o runner já
+> tem acesso local ao Docker. As credenciais do Cloudflare Tunnel ficam **no host** (`/srv/edge/cloudflared/`),
+> não em secrets do GitHub.
 

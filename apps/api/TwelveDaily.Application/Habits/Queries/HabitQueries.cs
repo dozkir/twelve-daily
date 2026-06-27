@@ -2,7 +2,7 @@ using MediatR;
 
 namespace TwelveDaily.Application.Habits.Queries;
 
-public record GetDailyHabitsQuery(Guid UserId, DateOnly Date, string UserTimezone) : IRequest<DailyHabitsResult>;
+public record GetDailyHabitsQuery(Guid UserId, DateOnly Date) : IRequest<DailyHabitsResult>;
 
 public record DailyHabitsResult(List<DayResult> Days);
 

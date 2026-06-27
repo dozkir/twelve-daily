@@ -1,5 +1,9 @@
 # Arquitetura — Frontend
 
+> 📌 As **convenções operacionais** (telas finas, hooks por feature, query keys,
+> estilo, i18n) vivem em [`apps/client/CLAUDE.md`](../../apps/client/CLAUDE.md).
+> Este documento descreve a arquitetura; o `CLAUDE.md` descreve como trabalhar nela.
+
 ## Stack
 
 | Função | Tecnologia |
@@ -16,34 +20,83 @@
 
 ---
 
-## Geração de Cliente API (orval)
+## Arquitetura de pastas (feature-based)
 
-- O .NET expõe schema **OpenAPI/Swagger** automaticamente via Swashbuckle
-- O `orval` lê esse schema e gera `packages/api-client/` com:
-  - Tipos TypeScript espelhando os DTOs C#
-  - Hooks TanStack Query para cada endpoint
-- Ao alterar um DTO no C#: rodar `npx orval` na raiz regenera o cliente
-- `packages/api-client/` **nunca é editado manualmente**
-- Configuração em `orval.config.ts` na raiz do monorepo
+Padrão "feature-sliced lite": roteamento separado da lógica, e cada domínio
+agrupado.
 
-```ts
-// Exemplo de uso no front — hooks TanStack Query gerados pelo orval
-import {
-  useHabitsGetDaily,
-  useHabitChecksCheck,
-  useHabitChecksUncheck,
-} from '@twelve-daily/api-client'
-
-const { data: daily } = useHabitsGetDaily({ date: '2026-03-27' })
-
-const check = useHabitChecksCheck()
-check.mutate({ habitId, data: { date: '2026-03-27' } })   // upsert do check do dia
-
-const uncheck = useHabitChecksUncheck()
-uncheck.mutate({ habitId, params: { date: '2026-03-27' } }) // desfaz
+```
+app/                       ← SÓ roteamento (Expo Router). Telas finas.
+  (auth)/  (app)/          ← grupos de rota por estado de login
+src/
+  api/                     ← cross-cutting de API: query-keys.ts, error.ts
+  <feature>/               ← habits, timeline, dashboard, settings, auth, notifications
+    queries.ts             ← hooks de estado de servidor (useQuery/useMutation) + invalidação
+    <feature>-form.tsx     ← formulário + schema Zod (quando houver)
+  ui/                      ← componentes burros reutilizáveis (Screen, FormInput, TimeInput)
+  theme.ts / date.ts / config.ts
 ```
 
-> **Nota:** `packages/api-client/src/generated/` já é gerado pelo orval a partir do OpenAPI da API (tipos em `model/` + hooks em `client.ts`, com `customInstance` em `src/http/mutator.ts`). Esse diretório nunca é editado à mão — rode `npm run api:generate` (com a API no ar) após mudar qualquer DTO/endpoint.
+### Padrões/convenções
+
+| Convenção | Onde | Por quê |
+|---|---|---|
+| **Telas finas** | `app/**` | tela cuida de UI/navegação/estado local; sem `useQuery`/`useMutation` cru — análogo ao "controller fino" do backend |
+| **Hooks de dados por feature** | `src/<feature>/queries.ts` | busca + invalidação de cache centralizadas; tela só consome |
+| **Query keys centralizadas** | `src/api/query-keys.ts` | fonte única de chaves (`habitKeys`, `timelineKeys`, …); evita typo e invalidação que não atinge o cache |
+| **Form + schema colocados** | `src/<feature>/*-form.tsx` | React Hook Form + Zod juntos |
+| **Tema central** | `src/theme.ts` + `StyleSheet` | estilo consistente (sem NativeWind) |
+| **Context para sessão** | `src/auth/auth-context.tsx` | axios configurado uma vez; token lido por ref |
+
+---
+
+## Geração de Cliente API (orval)
+
+- O .NET expõe schema **OpenAPI/Swagger** automaticamente via Swashbuckle.
+- O `orval` (config: `orval.config.ts` na raiz, modo `react-query`) lê esse schema e
+  gera `packages/api-client/` com:
+  - Tipos TypeScript espelhando os DTOs C# (em `src/generated/model/`)
+  - **Funções tipadas** por endpoint (ex.: `habitsList`, `habitsGetDaily`) **e** hooks `useX`
+- **Convenção do projeto:** consumimos as **funções tipadas** dentro dos nossos hooks
+  de feature (`src/<feature>/queries.ts`), **não** os hooks `useX` gerados direto nas
+  telas — assim controlamos query keys e invalidação num lugar só.
+- `packages/api-client/` **nunca é editado manualmente** — rode `npm run api:generate`
+  (com a API no ar) após mudar qualquer DTO/endpoint.
+
+```ts
+// src/timeline/queries.ts — função tipada do orval envolta em hook de feature
+import { habitsGetDaily, habitChecksCheck, habitChecksUncheck } from "@twelve-daily/api-client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { dashboardKeys, timelineKeys } from "@/src/api/query-keys";
+
+export const useDailyQuery = (date: string) =>
+  useQuery({ queryKey: timelineKeys.byDate(date), queryFn: () => habitsGetDaily({ date }) });
+
+export const useToggleCheckMutation = (date: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ habitId, isDone }: { habitId: string; isDone: boolean }) => {
+      if (isDone) await habitChecksUncheck(habitId, { date });
+      else await habitChecksCheck(habitId, { date });
+    },
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: timelineKeys.byDate(date) }),
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
+    ])
+  });
+};
+```
+
+```tsx
+// Na tela: consome o hook; efeitos de UI vão nos callbacks de mutate
+const timelineQuery = useDailyQuery(date);
+const checkMutation = useToggleCheckMutation(date);
+checkMutation.mutate({ habitId, isDone }, { onError: (e) => setActionError(getApiErrorMessage(e)) });
+```
+
+> **i18n:** as strings de UI ainda têm idioma misto (inglês + alguns textos em
+> português). A internacionalização (PT/EN/ES) é uma feature planejada — ver
+> [`docs/specs/i18n.md`](../specs/i18n.md).
 
 ---
 

@@ -12,7 +12,7 @@
 | Runtime | .NET 10 / C# 13 |
 | API | ASP.NET Core Web API |
 | ORM | Entity Framework Core |
-| Banco | PostgreSQL (Docker local / Fly.io Postgres em produção) |
+| Banco | PostgreSQL (container Docker — local e em produção no `onze`, dedicado ao app) |
 | CQRS | MediatR |
 | Validação | FluentValidation + MediatR Pipeline Behavior |
 | Jobs | Hangfire + Hangfire.PostgreSql |
@@ -20,7 +20,7 @@
 | Auth | JWT 15min + Refresh Token 7 dias |
 | Push | Expo Push Notifications |
 | Integração | Google Calendar API (OAuth2) |
-| Deploy | Fly.io (API + DB) + Azure Static Web Apps (Web) |
+| Deploy | Self-hosted no `onze` (Docker Compose + Caddy); imagens via ghcr.io; mobile via EAS |
 | Front-end | Expo (Managed Workflow) + TypeScript |
 | Monorepo | Turborepo |
 | Geração de tipos | orval (OpenAPI → tipos TS + hooks TanStack Query) |

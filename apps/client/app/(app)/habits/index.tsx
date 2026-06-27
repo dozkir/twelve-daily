@@ -1,50 +1,24 @@
-import { habitsDelete, habitsList, habitsToggle } from "@twelve-daily/api-client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/error";
+import { useDeleteHabitMutation, useHabitsQuery, useToggleHabitMutation } from "@/src/habits/queries";
 import { colors } from "@/src/theme";
 import { Screen } from "@/src/ui/screen";
 
 export default function HabitsScreen() {
-  const queryClient = useQueryClient();
   const [tab, setTab] = useState<"active" | "inactive">("active");
 
-  const habitsQuery = useQuery({
-    queryKey: ["habits"],
-    queryFn: () => habitsList()
-  });
+  const habitsQuery = useHabitsQuery();
 
   const visibleHabits = useMemo(
     () => (habitsQuery.data ?? []).filter((habit) => (tab === "active" ? habit.isActive : !habit.isActive)),
     [habitsQuery.data, tab]
   );
 
-  const refreshHabitViews = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["habits"] }),
-      queryClient.invalidateQueries({ queryKey: ["daily"] }),
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] })
-    ]);
-  };
-
-  const toggleHabitMutation = useMutation({
-    mutationFn: (habitId: string) => habitsToggle(habitId),
-    onSuccess: refreshHabitViews,
-    onError: (error) => {
-      Alert.alert("Unable to update habit", getApiErrorMessage(error));
-    }
-  });
-
-  const deleteHabitMutation = useMutation({
-    mutationFn: (habitId: string) => habitsDelete(habitId),
-    onSuccess: refreshHabitViews,
-    onError: (error) => {
-      Alert.alert("Unable to delete habit", getApiErrorMessage(error));
-    }
-  });
+  const toggleHabitMutation = useToggleHabitMutation();
+  const deleteHabitMutation = useDeleteHabitMutation();
 
   return (
     <Screen title="Habits" subtitle="Manage your routines">
@@ -102,7 +76,9 @@ export default function HabitsScreen() {
                 style={[styles.actionButton, styles.secondaryActionButton]}
                 disabled={toggleHabitMutation.isPending || deleteHabitMutation.isPending}
                 onPress={() => {
-                  toggleHabitMutation.mutate(item.id);
+                  toggleHabitMutation.mutate(item.id, {
+                    onError: (error) => Alert.alert("Unable to update habit", getApiErrorMessage(error))
+                  });
                 }}>
                 <Text style={styles.secondaryActionButtonText}>{item.isActive ? "Inactivate" : "Activate"}</Text>
               </TouchableOpacity>
@@ -120,7 +96,9 @@ export default function HabitsScreen() {
                       {
                         text: "Delete",
                         style: "destructive",
-                        onPress: () => deleteHabitMutation.mutate(item.id)
+                        onPress: () => deleteHabitMutation.mutate(item.id, {
+                          onError: (error) => Alert.alert("Unable to delete habit", getApiErrorMessage(error))
+                        })
                       }
                     ]
                   );

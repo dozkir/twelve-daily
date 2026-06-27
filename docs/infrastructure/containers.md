@@ -4,12 +4,14 @@
 
 | Container | Ambiente | Descrição |
 |---|---|---|
-| `db` | Local | PostgreSQL |
-| `api` | Local + Produção (Fly.io) | TwelveDaily.Api (.NET) |
+| `db` | Local + Produção (`onze`) | PostgreSQL (dedicado ao twelve-daily) |
+| `api` | Local + Produção (`onze`) | TwelveDaily.Api (.NET) |
+| `web` | Produção (`onze`) | Expo export estático (nginx) atrás do Caddy |
+| `caddy` | Produção (`onze`) | Reverse proxy compartilhado + HTTPS automático |
 
-> O front-end web **não possui container**.
-> - Desenvolvimento: `npx expo start --web` (servidor Node nativo)
-> - Produção: arquivos estáticos no Azure Static Web Apps
+> Em **desenvolvimento** o front-end web roda sem container: `npx expo start --web`
+> (servidor Node nativo). Em **produção** no `onze`, o bundle estático (`expo export`) é
+> servido por um container `web` atrás do Caddy. Ver [deployment.md](deployment.md).
 
 ---
 

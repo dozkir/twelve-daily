@@ -1,11 +1,10 @@
-import { habitsGetDetail, habitsUpdate, habitsUpdateSchedules, type HabitDetailResult } from "@twelve-daily/api-client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/error";
-import { HabitForm, type HabitFormValues } from "@/src/habits/habit-form";
+import { useHabitDetailQuery, useUpdateHabitMutation } from "@/src/habits/queries";
+import { HabitForm } from "@/src/habits/habit-form";
 import { buildHabitFormInitialValues, buildHabitSchedulesPayload } from "@/src/habits/habit-form-values";
 import { colors } from "@/src/theme";
 import { Screen } from "@/src/ui/screen";
@@ -13,42 +12,10 @@ import { Screen } from "@/src/ui/screen";
 export default function EditHabitScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const habitId = typeof id === "string" ? id : id?.[0] ?? "";
-  const queryClient = useQueryClient();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const habitQuery = useQuery({
-    queryKey: ["habit", habitId],
-    queryFn: () => habitsGetDetail(habitId),
-    enabled: habitId.length > 0
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ values, detail }: { values: HabitFormValues; detail: HabitDetailResult }) => {
-      await Promise.all([
-        habitsUpdate(habitId, {
-          name: values.name,
-          emoji: values.emoji,
-          description: values.description?.trim() || undefined,
-          syncGoogleCalendar: detail.syncGoogleCalendar
-        }),
-        habitsUpdateSchedules(habitId, {
-          schedules: buildHabitSchedulesPayload(values)
-        })
-      ]);
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["habits"] }),
-        queryClient.invalidateQueries({ queryKey: ["habit", habitId] }),
-        queryClient.invalidateQueries({ queryKey: ["daily"] }),
-        queryClient.invalidateQueries({ queryKey: ["dashboard"] })
-      ]);
-      router.replace("/(app)/habits");
-    },
-    onError: (error) => {
-      setSubmitError(getApiErrorMessage(error));
-    }
-  });
+  const habitQuery = useHabitDetailQuery(habitId);
+  const updateMutation = useUpdateHabitMutation(habitId);
 
   const initialValues = useMemo(
     () => habitQuery.data ? buildHabitFormInitialValues(habitQuery.data) : undefined,
@@ -104,9 +71,18 @@ export default function EditHabitScreen() {
       onSubmit={async (values) => {
         setSubmitError(null);
         try {
-          await updateMutation.mutateAsync({ values, detail: habitQuery.data });
-        } catch {
-          // Error state is already set via the mutation handler.
+          await updateMutation.mutateAsync({
+            habit: {
+              name: values.name,
+              emoji: values.emoji,
+              description: values.description?.trim() || undefined,
+              syncGoogleCalendar: habitQuery.data.syncGoogleCalendar
+            },
+            schedules: { schedules: buildHabitSchedulesPayload(values) }
+          });
+          router.replace("/(app)/habits");
+        } catch (error) {
+          setSubmitError(getApiErrorMessage(error));
         }
       }}
       onCancel={() => router.back()}

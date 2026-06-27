@@ -104,8 +104,8 @@ public class HabitsController : ControllerBase
     public async Task<IActionResult> GetDaily([FromQuery] DateOnly date)
     {
         var userId = GetUserId();
-        var userTimezone = "UTC"; // Will be resolved by handler
-        var result = await _mediator.Send(new GetDailyHabitsQuery(userId, date, userTimezone));
+        // O fuso é resolvido no handler a partir do User.Timezone (IANA); não há entrada do cliente.
+        var result = await _mediator.Send(new GetDailyHabitsQuery(userId, date));
         return Ok(result);
     }
 

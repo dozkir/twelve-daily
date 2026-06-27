@@ -4,6 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Twelve Daily is a daily-habit tracker: a .NET REST API drives Expo web + mobile clients, with scheduled push notifications (SignalR real-time updates are planned but not yet implemented). Detailed docs live in `docs/` (written in Portuguese); start at `docs/index.md`. `docs/claude.md` is a consolidated quick-reference.
 
+## Per-app conventions (nested CLAUDE.md)
+
+Each app carries its own conventions, loaded when you work in that directory:
+
+- **`apps/api/CLAUDE.md`** — backend: Clean Architecture + CQRS, clean-code rules (centralized ownership guard, domain exceptions → HTTP, injectable time), how to build/test via the SDK container.
+- **`apps/client/CLAUDE.md`** — frontend: feature-based layout, thin screens, data hooks per feature (`src/<feature>/queries.ts`), centralized query keys, styling, orval usage, i18n.
+
+## Documentation maintenance (always)
+
+Treat the docs as part of the code. When you change architecture, domain rules, contracts or conventions, **review and update the affected docs in the same change** so they don't go stale or get silently ignored — `docs/architecture/*`, `docs/domain/*`, `docs/specs/*`, `docs/CLAUDE.md`, `docs/index.md`, and the relevant `CLAUDE.md`. If a doc contradicts the code, fix the doc (or mark it historical, as `docs/roadmap.md` does) rather than leaving it divergent. (`docs/infrastructure/deployment.md` is a local, gitignored working doc — do not commit it.)
+
 ## Monorepo layout
 
 Turborepo at the root coordinates the JS/TS workspaces (`packages/*`); the .NET solution is standalone under `apps/api`.
