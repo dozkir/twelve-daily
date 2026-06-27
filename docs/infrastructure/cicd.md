@@ -26,18 +26,31 @@ jobs:
 
 ---
 
-## Pipeline: Deploy no `onze` *(planejado)*
+## Pipeline: Build & Push de imagens ✅
 
-Disparado ao concluir o build/test com sucesso em `master`. Modelo **image-based**
-(detalhes e esboço do workflow em [deployment.md](deployment.md) §8):
+Implementado em `.github/workflows/images.yml`. Disparado a cada **push na `master`**
+(e manualmente via `workflow_dispatch`). Dois jobs publicam no GitHub Container Registry:
 
 ```yaml
 jobs:
-  build-images:                       # roda na nuvem do GitHub
-    - Build da imagem Docker da API → push GitHub Container Registry (ghcr.io)
-    - Build da Web (expo export) → imagem estática (nginx) → push ghcr.io
+  api:   # context ./apps/api → ghcr.io/dozkir/twelve-daily-api:latest (+ tag por SHA)
+  web:   # context . (raiz; client usa file: api-client) → ghcr.io/dozkir/twelve-daily-web:latest
+         # build-arg EXPO_PUBLIC_API_URL embute a URL da API no bundle (em build-time)
+```
 
-  deploy:                             # roda em self-hosted runner NO onze
+> Autentica no `ghcr.io` com o `GITHUB_TOKEN` automático (`permissions: packages: write`);
+> sem token manual. Usa cache de layers do Actions (`type=gha`). A imagem da Web é
+> construída com contexto na **raiz** do repo porque o cliente depende de
+> `packages/api-client` via `file:`.
+
+## Pipeline: Deploy no `onze` *(planejado)*
+
+Ainda **não implementado**. Modelo **image-based**: depois do push das imagens, o `onze`
+puxa e recria os containers.
+
+```yaml
+jobs:
+  deploy:                            # roda em self-hosted runner NO onze
     - cd /srv/twelve-daily
         docker compose pull        # baixa as imagens novas do ghcr.io
         docker compose up -d        # recria os containers atualizados
@@ -68,10 +81,10 @@ jobs:
 
 ## Secrets necessários (GitHub)
 
-| Secret | Usado em |
-|---|---|
-| `EXPO_PUBLIC_API_URL` | URL da API embutida no build da Web (`https://api.twelvedaily.doze.dev.br`) |
-| `EXPO_TOKEN` | EAS Build autenticado (mobile) |
+| Nome | Tipo | Usado em |
+|---|---|---|
+| `EXPO_PUBLIC_API_URL` | **Variable** (repo) | build-arg da imagem Web em `images.yml` (`https://api.twelvedaily.doze.dev.br`) |
+| `EXPO_TOKEN` | Secret | EAS Build autenticado (mobile) |
 
 > Para publicar imagens no **ghcr.io** dentro do próprio repositório, o `GITHUB_TOKEN`
 > automático já basta (com permissão `packages: write`) — não é preciso um token manual.
