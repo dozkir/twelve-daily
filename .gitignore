@@ -17,6 +17,10 @@ dist/
 .expo/
 *.tsbuildinfo
 
+# Env files do Expo/Node — ignora envs locais, mas mantém o exemplo versionado
+.env*
+!.env.example
+
 ## Ignoring Jetbrains Rider files.
 .idea/
 

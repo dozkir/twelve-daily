@@ -1,0 +1,13 @@
+# Mantém o contexto de build enxuto (vale para builds com contexto na raiz, ex.: a Web).
+**/node_modules
+**/.expo
+**/dist
+**/bin
+**/obj
+.git
+.github
+.turbo
+.idea
+.vs
+docs
+*.md
