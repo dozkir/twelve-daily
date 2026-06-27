@@ -1,8 +1,8 @@
 using MediatR;
+using TwelveDaily.Application.Common;
 using TwelveDaily.Application.Habits.Commands;
 using TwelveDaily.Application.Interfaces;
 using TwelveDaily.Domain.Entities;
-using TwelveDaily.Domain.Exceptions;
 using TwelveDaily.Domain.Interfaces;
 
 namespace TwelveDaily.Application.Habits.Handlers;
@@ -52,11 +52,7 @@ public class UpdateHabitHandler : IRequestHandler<UpdateHabitCommand>
 
     public async Task Handle(UpdateHabitCommand request, CancellationToken cancellationToken)
     {
-        var habit = await _habitRepository.GetByIdAsync(request.HabitId, cancellationToken);
-        if (habit == null)
-            throw new DomainException("Habit not found.");
-        if (habit.UserId != request.UserId)
-            throw new ForbiddenException("Habit does not belong to user.");
+        var habit = await _habitRepository.GetOwnedAsync(request.HabitId, request.UserId, cancellationToken);
 
         habit.Update(request.Name, request.Emoji, request.Description, request.SyncGoogleCalendar);
         await _habitRepository.UpdateAsync(habit, cancellationToken);
@@ -77,11 +73,7 @@ public class DeleteHabitHandler : IRequestHandler<DeleteHabitCommand>
 
     public async Task Handle(DeleteHabitCommand request, CancellationToken cancellationToken)
     {
-        var habit = await _habitRepository.GetByIdAsync(request.HabitId, cancellationToken);
-        if (habit == null)
-            throw new DomainException("Habit not found.");
-        if (habit.UserId != request.UserId)
-            throw new ForbiddenException("Habit does not belong to user.");
+        var habit = await _habitRepository.GetOwnedAsync(request.HabitId, request.UserId, cancellationToken);
 
         await _habitRepository.DeleteAsync(habit, cancellationToken);
         await _pushNotificationOrchestrator.RecomputeUserNotificationsAsync(habit.UserId, cancellationToken);
@@ -101,11 +93,7 @@ public class ToggleHabitHandler : IRequestHandler<ToggleHabitCommand>
 
     public async Task Handle(ToggleHabitCommand request, CancellationToken cancellationToken)
     {
-        var habit = await _habitRepository.GetByIdAsync(request.HabitId, cancellationToken);
-        if (habit == null)
-            throw new DomainException("Habit not found.");
-        if (habit.UserId != request.UserId)
-            throw new ForbiddenException("Habit does not belong to user.");
+        var habit = await _habitRepository.GetOwnedAsync(request.HabitId, request.UserId, cancellationToken);
 
         habit.ToggleActive();
         await _habitRepository.UpdateAsync(habit, cancellationToken);

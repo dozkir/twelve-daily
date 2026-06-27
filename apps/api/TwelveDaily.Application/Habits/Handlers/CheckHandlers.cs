@@ -35,11 +35,7 @@ public class CheckHabitHandler : IRequestHandler<CheckHabitCommand, HabitCheckRe
 
     public async Task<HabitCheckResult> Handle(CheckHabitCommand request, CancellationToken cancellationToken)
     {
-        var habit = await _habitRepository.GetByIdAsync(request.HabitId, cancellationToken);
-        if (habit == null)
-            throw new DomainException("Habit not found.");
-        if (habit.UserId != request.UserId)
-            throw new ForbiddenException("Habit does not belong to user.");
+        var habit = await _habitRepository.GetOwnedAsync(request.HabitId, request.UserId, cancellationToken);
 
         // Upsert idempotente: se já existe check para (hábito, data), retorna o existente.
         var existing = await _checkRepository.GetByHabitAndDateAsync(request.HabitId, request.Date, cancellationToken);

@@ -3,6 +3,10 @@
 
 /pgdata
 
+# Plano de deploy/CD do host `onze` — documento de trabalho local, não versionado
+# (contém detalhes operacionais e de infraestrutura específicos da máquina).
+docs/infrastructure/deployment.md
+
 # Claude Code (local agent state/settings)
 .claude/
 

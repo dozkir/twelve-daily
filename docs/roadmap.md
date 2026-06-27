@@ -241,6 +241,7 @@ Implementar o código para fazer os testes passarem.
 - [ ] Alterar timezone
 - [ ] Alterar senha
 - [x] Logout / Logout de todos os dispositivos
+- [ ] Seleção de idioma — **i18n (PT/EN/ES)**, ver [specs/i18n.md](specs/i18n.md)
 
 ### 5.7 — Notificações
 - [ ] Registro de push token (`expo-notifications`)
@@ -259,22 +260,22 @@ Implementar o código para fazer os testes passarem.
 - [x] GitHub Actions (`.github/workflows/dotnet.yml`): build + `dotnet test` (unit + integration) em todo push/PR para `master` — job `build` é o status check obrigatório do ruleset
 - [x] Verificar que TestContainers funciona no runner GitHub (Docker pré-instalado no `ubuntu-latest`)
 
-### 6.2 — Pipeline de Deploy (merge na main)
-- [ ] Build da imagem Docker da API
-- [ ] Push para GitHub Container Registry
-- [ ] Deploy da API para Fly.io
-- [ ] `npx orval` + `npx expo export --platform web`
-- [ ] Deploy web para Azure Static Web Apps
+### 6.2 — Pipeline de Deploy (merge na `master`) → self-hosted no `onze`
+> Plano detalhado em [infrastructure/deployment.md](infrastructure/deployment.md).
+- [ ] Build da imagem Docker da API → push para GitHub Container Registry (ghcr.io)
+- [ ] `npx expo export --platform web` → imagem estática (nginx) → push para ghcr.io
+- [ ] SSH no `onze`: `docker compose pull && up -d` (atualiza os containers)
 
 ### 6.3 — Pipeline Mobile
 - [ ] EAS Build (iOS + Android) via tag `v*`
-- [ ] Configurar secrets no GitHub (`FLY_API_TOKEN`, `EXPO_TOKEN`, etc.)
+- [ ] Configurar secrets no GitHub (`SSH_HOST`, `SSH_USER`, `SSH_KEY`, `EXPO_TOKEN`, etc.)
 
-### 6.4 — Infraestrutura de produção
-- [ ] Configurar app Fly.io (API)
-- [ ] Configurar Fly.io Postgres
-- [ ] Configurar Azure Static Web Apps
-- [ ] Configurar variáveis de ambiente (`fly secrets`)
+### 6.4 — Infraestrutura de produção (`onze`, Debian)
+- [ ] Setup do host: Docker + hardening (firewall, SSH por chave, usuário de deploy)
+- [ ] Reverse proxy Caddy compartilhado (HTTPS automático via Let's Encrypt)
+- [ ] Stack do twelve-daily: API + Web + Postgres dedicado (rede interna)
+- [ ] DNS (registros A) + port forwarding 80/443
+- [ ] Backups automáticos do Postgres (pg_dump + offsite)
 - [ ] Verificar deploy end-to-end
 
 ---
@@ -288,7 +289,7 @@ Fase 2  ✅  Testes unitários — RED (148 testes, 135 falhando)
 Fase 3  ✅  Testes de integração — RED
 Fase 4  ✅  Back-end — GREEN (148/148 testes unitários passando)
 Fase 5  ✅  Front-end (MVP — setup, auth, timeline, habits list, dashboard, settings)
-Fase 6  🟡  CI/CD — pipeline de PR (build + testes) pronto; deploy (Fly.io / Azure / EAS) pendente
+Fase 6  🟡  CI/CD — pipeline de PR (build + testes) pronto; deploy (self-hosted no `onze` + EAS) pendente
 ```
 
 > **Nota pós-MVP:** após a Fase 5, o domínio migrou do modelo de `HabitInstance` para o modelo de **check** (ver [habit-check-refactor](specs/habit-check-refactor.md)) e as **push notifications** (orquestrador + jobs Hangfire + Expo Push) foram implementadas no backend e no cliente. O **SignalR/real-time** segue planejado, ainda não implementado.

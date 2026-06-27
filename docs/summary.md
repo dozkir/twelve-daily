@@ -23,7 +23,7 @@ Todas as plataformas compartilham a mesma base de código (Expo/React Native). A
 ## Tecnologias principais
 - **Backend**: .NET 10 / C# 13, PostgreSQL, Hangfire (jobs/push) *(SignalR planejado)*
 - **Frontend**: Expo (React Native + Web), TypeScript
-- **Infraestrutura**: Docker, Fly.io, GitHub Actions
+- **Infraestrutura**: Docker (self-hosted no `onze`, Debian), Caddy, GitHub Actions (CI/CD)
 
 ## Documentação
 A especificação completa do projeto está em [`docs/index.md`](docs/index.md).

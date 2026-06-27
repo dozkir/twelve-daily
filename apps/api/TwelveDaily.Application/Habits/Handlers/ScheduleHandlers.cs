@@ -1,4 +1,5 @@
 using MediatR;
+using TwelveDaily.Application.Common;
 using TwelveDaily.Application.Habits.Commands;
 using TwelveDaily.Application.Interfaces;
 using TwelveDaily.Domain.Entities;
@@ -25,11 +26,7 @@ public class UpdateHabitSchedulesHandler : IRequestHandler<UpdateHabitSchedulesC
 
     public async Task Handle(UpdateHabitSchedulesCommand request, CancellationToken cancellationToken)
     {
-        var habit = await _habitRepository.GetByIdAsync(request.HabitId, cancellationToken);
-        if (habit == null)
-            throw new DomainException("Habit not found.");
-        if (habit.UserId != request.UserId)
-            throw new ForbiddenException("Habit does not belong to user.");
+        var habit = await _habitRepository.GetOwnedAsync(request.HabitId, request.UserId, cancellationToken);
 
         await _scheduleRepository.DeleteByHabitIdAsync(habit.Id, cancellationToken);
 
@@ -58,11 +55,7 @@ public class ToggleHabitScheduleHandler : IRequestHandler<ToggleHabitScheduleCom
 
     public async Task Handle(ToggleHabitScheduleCommand request, CancellationToken cancellationToken)
     {
-        var habit = await _habitRepository.GetByIdAsync(request.HabitId, cancellationToken);
-        if (habit == null)
-            throw new DomainException("Habit not found.");
-        if (habit.UserId != request.UserId)
-            throw new ForbiddenException("Habit does not belong to user.");
+        var habit = await _habitRepository.GetOwnedAsync(request.HabitId, request.UserId, cancellationToken);
 
         var schedules = await _scheduleRepository.GetByHabitIdAsync(habit.Id, cancellationToken);
         var schedule = schedules.FirstOrDefault(s => s.DayOfWeek == request.DayOfWeek);

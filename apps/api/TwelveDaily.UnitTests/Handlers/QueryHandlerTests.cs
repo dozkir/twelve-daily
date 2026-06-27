@@ -34,7 +34,7 @@ public class GetDailyHabitsHandlerTests
     [Fact]
     public async Task Handle_ShouldReturn7Days()
     {
-        var query = new GetDailyHabitsQuery(Guid.NewGuid(), new DateOnly(2026, 4, 6), "America/Sao_Paulo");
+        var query = new GetDailyHabitsQuery(Guid.NewGuid(), new DateOnly(2026, 4, 6));
 
         var result = await _handler.Handle(query, CancellationToken.None);
 
@@ -44,7 +44,7 @@ public class GetDailyHabitsHandlerTests
     [Fact]
     public async Task Handle_ShouldLabelDayTypes()
     {
-        var query = new GetDailyHabitsQuery(Guid.NewGuid(), new DateOnly(2026, 4, 6), "America/Sao_Paulo");
+        var query = new GetDailyHabitsQuery(Guid.NewGuid(), new DateOnly(2026, 4, 6));
 
         var result = await _handler.Handle(query, CancellationToken.None);
 
@@ -61,7 +61,7 @@ public class GetDailyHabitsHandlerTests
         _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
             .Returns(new User("timezone@example.com", "hash", "America/Los_Angeles"));
 
-        var result = await _handler.Handle(new GetDailyHabitsQuery(userId, new DateOnly(2026, 4, 5), "UTC"), CancellationToken.None);
+        var result = await _handler.Handle(new GetDailyHabitsQuery(userId, new DateOnly(2026, 4, 5)), CancellationToken.None);
 
         // 2026-04-06 02:00 UTC is still 2026-04-05 in Los Angeles
         result.Days.Should().Contain(d => d.Date == new DateOnly(2026, 4, 5) && d.Type == "today");
@@ -81,7 +81,7 @@ public class GetDailyHabitsHandlerTests
         _habitRepository.GetByUserIdAsync(userId, Arg.Any<CancellationToken>()).Returns([habit]);
         _scheduleRepository.GetByUserAsync(userId, Arg.Any<CancellationToken>()).Returns([schedule]);
 
-        var result = await _handler.Handle(new GetDailyHabitsQuery(userId, today, "UTC"), CancellationToken.None);
+        var result = await _handler.Handle(new GetDailyHabitsQuery(userId, today), CancellationToken.None);
 
         var todayItems = result.Days.First(d => d.Date == today).Items;
         todayItems.Should().ContainSingle(i => i.HabitId == habit.Id && i.CheckedAt == null);
@@ -107,7 +107,7 @@ public class GetDailyHabitsHandlerTests
         _checkRepository.GetByUserAndDateRangeAsync(userId, Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
             .Returns([check]);
 
-        var result = await _handler.Handle(new GetDailyHabitsQuery(userId, today, "UTC"), CancellationToken.None);
+        var result = await _handler.Handle(new GetDailyHabitsQuery(userId, today), CancellationToken.None);
 
         var item = result.Days.First(d => d.Date == today).Items.Single(i => i.HabitId == habit.Id);
         item.Name.Should().Be("Nome Antigo");          // snapshot, não o nome atual

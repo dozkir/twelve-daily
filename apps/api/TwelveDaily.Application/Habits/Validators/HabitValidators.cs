@@ -42,6 +42,7 @@ public class UpdateHabitCommandValidator : AbstractValidator<UpdateHabitCommand>
 {
     public UpdateHabitCommandValidator()
     {
+        RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.Name).NotEmpty();
         RuleFor(x => x.Emoji).NotEmpty();
     }

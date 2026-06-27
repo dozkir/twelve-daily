@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { habitChecksCheck, habitChecksUncheck, habitsGetDaily, type DayItemResult } from "@twelve-daily/api-client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type DayItemResult } from "@twelve-daily/api-client";
 import * as Haptics from "expo-haptics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -8,6 +7,7 @@ import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet,
 import { getApiErrorMessage } from "@/src/api/error";
 import { buildHourRange, formatHourLabel, formatShortTime, formatTimelineDateLabel, formatTimelineDayLabel, parseTimeToMinutes, shiftIsoDate, toIsoDate } from "@/src/date";
 import { colors } from "@/src/theme";
+import { useDailyQuery, useToggleCheckMutation } from "@/src/timeline/queries";
 import { Screen } from "@/src/ui/screen";
 
 const DEFAULT_START_HOUR = 0;
@@ -144,34 +144,24 @@ export default function TimelineScreen() {
   const lastAutoScrolledDateRef = useRef<string | null>(null);
   const popoverAnimation = useRef(new Animated.Value(0)).current;
   const currentTimePulse = useRef(new Animated.Value(1)).current;
-  const queryClient = useQueryClient();
+  const timelineQuery = useDailyQuery(date);
+  const checkMutation = useToggleCheckMutation(date);
 
-  const timelineQuery = useQuery({
-    queryKey: ["daily", date],
-    queryFn: () => habitsGetDaily({ date })
-  });
-
-  const checkMutation = useMutation({
-    mutationFn: async ({ habitId, isDone }: { habitId: string; isDone: boolean }) => {
-      if (isDone) {
-        await habitChecksUncheck(habitId, { date });
-      } else {
-        await habitChecksCheck(habitId, { date });
+  // O hook cuida da chamada + invalidação de cache; aqui ficam os efeitos de UI
+  // (limpar erro/seleção e o feedback tátil) compartilhados pelos dois botões de check.
+  const toggleCheck = (habitId: string, isDone: boolean) => {
+    checkMutation.mutate(
+      { habitId, isDone },
+      {
+        onSuccess: async () => {
+          setActionError(null);
+          setSelectedItemKey(null);
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        },
+        onError: (error) => setActionError(getApiErrorMessage(error))
       }
-    },
-    onSuccess: async () => {
-      setActionError(null);
-      setSelectedItemKey(null);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["daily", date] }),
-        queryClient.invalidateQueries({ queryKey: ["dashboard"] })
-      ]);
-    },
-    onError: (error) => {
-      setActionError(getApiErrorMessage(error));
-    }
-  });
+    );
+  };
 
   const activeDay = timelineQuery.data?.days.find((day) => day.date === date);
   const timelineItems = useMemo(
@@ -436,7 +426,7 @@ export default function TimelineScreen() {
                     !canCheck || checkMutation.isPending ? styles.checkButtonDisabled : null
                   ]}
                   disabled={!canCheck || checkMutation.isPending}
-                  onPress={() => checkMutation.mutate({ habitId: item.habitId, isDone })}>
+                  onPress={() => toggleCheck(item.habitId, isDone)}>
                   <Ionicons
                     name={isDone ? "checkmark" : "ellipse-outline"}
                     size={20}
@@ -570,12 +560,7 @@ export default function TimelineScreen() {
                           visiblePopoverItem.item.checkedAt ? styles.checkButtonDone : null
                         ]}
                         disabled={!canCheck || checkMutation.isPending}
-                        onPress={() => {
-                          checkMutation.mutate({
-                            habitId: visiblePopoverItem.item.habitId,
-                            isDone: !!visiblePopoverItem.item.checkedAt
-                          });
-                        }}>
+                        onPress={() => toggleCheck(visiblePopoverItem.item.habitId, !!visiblePopoverItem.item.checkedAt)}>
                         <Text style={styles.checkButtonText}>{visiblePopoverItem.item.checkedAt ? "Undo" : "Check"}</Text>
                       </TouchableOpacity>
                     </View>

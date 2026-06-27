@@ -3,7 +3,6 @@ using TwelveDaily.Application.Common;
 using TwelveDaily.Application.Habits.Queries;
 using TwelveDaily.Application.Interfaces;
 using TwelveDaily.Domain.Entities;
-using TwelveDaily.Domain.Exceptions;
 using TwelveDaily.Domain.Interfaces;
 
 namespace TwelveDaily.Application.Habits.Handlers;
@@ -38,7 +37,7 @@ public class GetDailyHabitsHandler : IRequestHandler<GetDailyHabitsQuery, DailyH
     public async Task<DailyHabitsResult> Handle(GetDailyHabitsQuery request, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
-        var timezone = user?.Timezone ?? request.UserTimezone;
+        var timezone = user?.Timezone;
         var today = UserClock.LocalToday(timezone, _dateTime.UtcNow);
 
         var startDate = request.Date.AddDays(-3);
@@ -127,11 +126,7 @@ public class GetHabitDetailHandler : IRequestHandler<GetHabitDetailQuery, HabitD
 
     public async Task<HabitDetailResult> Handle(GetHabitDetailQuery request, CancellationToken cancellationToken)
     {
-        var habit = await _habitRepository.GetByIdAsync(request.HabitId, cancellationToken);
-        if (habit == null)
-            throw new DomainException("Habit not found.");
-        if (habit.UserId != request.UserId)
-            throw new ForbiddenException("Habit does not belong to user.");
+        var habit = await _habitRepository.GetOwnedAsync(request.HabitId, request.UserId, cancellationToken);
 
         var schedules = await _scheduleRepository.GetByHabitIdAsync(habit.Id, cancellationToken);
 
