@@ -64,18 +64,18 @@ deploy:
 
 ---
 
-## Pipeline: Release Mobile
+## Pipeline: Mobile (EAS Build)
 
-Disparado ao criar uma tag `v*` ou manualmente.
+O app mobile **não** roda no `onze` — é compilado na **nuvem do EAS** (Expo), fora dos
+containers. Perfis em `apps/client/eas.json` (a URL da API é embutida no build via
+`env.EXPO_PUBLIC_API_URL`, igual à Web):
 
-```yaml
-jobs:
-  eas-build:
-    - npx eas build --platform all --non-interactive
-    # Gera .ipa (iOS) e .apk/.aab (Android) na nuvem EAS
-    # Opcional:
-    - npx eas submit   ← publica nas stores automaticamente
-```
+- **`preview`** → APK de **distribuição interna** (sideload; zero custo). Caminho atual.
+  `eas build -p android --profile preview`
+- **`production`** → AAB para Google Play via `eas submit` (requer conta de dev, US$25). *Planejado.*
+
+Automação (futuro): workflow por **tag `v*`** rodando `eas build` com o secret `EXPO_TOKEN`
+— a build roda na nuvem do EAS; o GitHub Actions só dispara.
 
 ---
 

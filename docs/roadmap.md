@@ -266,9 +266,11 @@ Implementado em `.github/workflows/images.yml`.
 - [x] Build da Web (`expo export` → nginx) → push ghcr.io
 - [x] Deploy no `onze` via **self-hosted runner**: `docker compose pull && up -d` (sem SSH — Cloudflare Tunnel)
 
-### 6.3 — Pipeline Mobile
-- [ ] EAS Build (iOS + Android) via tag `v*`
-- [ ] Configurar secrets no GitHub (`SSH_HOST`, `SSH_USER`, `SSH_KEY`, `EXPO_TOKEN`, etc.)
+### 6.3 — Pipeline Mobile (EAS) 🟡
+- [x] `eas.json`: perfil `preview` (APK interno, zero custo) + `production` (AAB); URL da API via `env`
+- [ ] Build/distribuição do APK (`eas build -p android --profile preview`) — manual por enquanto
+- [ ] Automação por tag `v*` + secret `EXPO_TOKEN` (build na nuvem do EAS)
+- [ ] Play Store (`production` + `eas submit`) — requer conta de dev — *planejado*
 
 ### 6.4 — Infraestrutura de produção (`onze`, Debian) 🟡
 - [x] Setup do host: Docker + self-hosted runner (usuário `doze`)
