@@ -45,6 +45,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false
 
   web:
     runs-on: ubuntu-latest
@@ -83,3 +84,25 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false
+
+  # Roda NO onze (self-hosted runner), depois que as imagens foram publicadas.
+  # Como o onze usa Cloudflare Tunnel (sem portas de entrada), não há SSH de fora:
+  # o próprio host puxa as imagens novas e recria os containers.
+  deploy:
+    needs: [api, web]
+    if: github.ref == 'refs/heads/master'
+    runs-on: [self-hosted, onze]
+    concurrency:
+      group: deploy-onze
+      cancel-in-progress: false
+    steps:
+      # Não faz docker login aqui: o host (doze) já está autenticado no ghcr.io
+      # (login persistente, read:packages) — o "runner autenticado". Fazer login
+      # com o GITHUB_TOKEN aqui sobrescreveria essa credencial por uma efêmera.
+      - name: Pull das imagens e recriar os containers
+        run: |
+          cd /srv/twelve-daily
+          docker compose pull
+          docker compose up -d
+          docker image prune -f

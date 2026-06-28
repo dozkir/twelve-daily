@@ -260,23 +260,25 @@ Implementar o código para fazer os testes passarem.
 - [x] GitHub Actions (`.github/workflows/dotnet.yml`): build + `dotnet test` (unit + integration) em todo push/PR para `master` — job `build` é o status check obrigatório do ruleset
 - [x] Verificar que TestContainers funciona no runner GitHub (Docker pré-instalado no `ubuntu-latest`)
 
-### 6.2 — Pipeline de Deploy (merge na `master`) → self-hosted no `onze`
-> Plano detalhado em [infrastructure/deployment.md](infrastructure/deployment.md).
-- [ ] Build da imagem Docker da API → push para GitHub Container Registry (ghcr.io)
-- [ ] `npx expo export --platform web` → imagem estática (nginx) → push para ghcr.io
-- [ ] SSH no `onze`: `docker compose pull && up -d` (atualiza os containers)
+### 6.2 — Pipeline de imagens + deploy (merge na `master`) → self-hosted no `onze` ✅
+Implementado em `.github/workflows/images.yml`.
+- [x] Build da imagem da API → push GitHub Container Registry (ghcr.io)
+- [x] Build da Web (`expo export` → nginx) → push ghcr.io
+- [x] Deploy no `onze` via **self-hosted runner**: `docker compose pull && up -d` (sem SSH — Cloudflare Tunnel)
 
 ### 6.3 — Pipeline Mobile
 - [ ] EAS Build (iOS + Android) via tag `v*`
 - [ ] Configurar secrets no GitHub (`SSH_HOST`, `SSH_USER`, `SSH_KEY`, `EXPO_TOKEN`, etc.)
 
-### 6.4 — Infraestrutura de produção (`onze`, Debian)
-- [ ] Setup do host: Docker + hardening (firewall, SSH por chave, usuário de deploy)
-- [ ] Reverse proxy Caddy compartilhado (HTTPS automático via Let's Encrypt)
-- [ ] Stack do twelve-daily: API + Web + Postgres dedicado (rede interna)
-- [ ] DNS (registros A) + port forwarding 80/443
-- [ ] Backups automáticos do Postgres (pg_dump + offsite)
-- [ ] Verificar deploy end-to-end
+### 6.4 — Infraestrutura de produção (`onze`, Debian) 🟡
+- [x] Setup do host: Docker + self-hosted runner (usuário `doze`)
+- [x] Exposição via **Cloudflare Tunnel** + **Caddy** interno (TLS na borda da Cloudflare — sem port forwarding, sem Let's Encrypt no host)
+- [x] Stack do twelve-daily: API + Web + Postgres dedicado (rede interna)
+- [x] DNS na Cloudflare (wildcard `*.doze.dev.br` → túnel)
+- [x] Verificar deploy end-to-end (web + `/health` por HTTPS)
+- [ ] Backups automáticos do Postgres (pg_dump + offsite) — *planejado*
+- [ ] Hardening do host (ufw, SSH por chave) — *planejado*
+- [ ] Observabilidade (rotação de log no Docker, uptime) — *planejado*
 
 ---
 
@@ -289,7 +291,7 @@ Fase 2  ✅  Testes unitários — RED (148 testes, 135 falhando)
 Fase 3  ✅  Testes de integração — RED
 Fase 4  ✅  Back-end — GREEN (148/148 testes unitários passando)
 Fase 5  ✅  Front-end (MVP — setup, auth, timeline, habits list, dashboard, settings)
-Fase 6  🟡  CI/CD — pipeline de PR (build + testes) pronto; deploy (self-hosted no `onze` + EAS) pendente
+Fase 6  🟡  CI/CD — PR (build/test) ✅, imagens no GHCR ✅, deploy automático no `onze` ✅; faltam backups/hardening/observabilidade e EAS (mobile)
 ```
 
 > **Nota pós-MVP:** após a Fase 5, o domínio migrou do modelo de `HabitInstance` para o modelo de **check** (ver [habit-check-refactor](specs/habit-check-refactor.md)) e as **push notifications** (orquestrador + jobs Hangfire + Expo Push) foram implementadas no backend e no cliente. O **SignalR/real-time** segue planejado, ainda não implementado.

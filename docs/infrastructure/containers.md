@@ -7,11 +7,11 @@
 | `db` | Local + Produção (`onze`) | PostgreSQL (dedicado ao twelve-daily) |
 | `api` | Local + Produção (`onze`) | TwelveDaily.Api (.NET) |
 | `web` | Produção (`onze`) | Expo export estático (nginx) atrás do Caddy |
-| `caddy` | Produção (`onze`) | Reverse proxy compartilhado + HTTPS automático |
+| `caddy` | Produção (`onze`) | Reverse proxy interno compartilhado (TLS termina na borda da Cloudflare) |
 
 > Em **desenvolvimento** o front-end web roda sem container: `npx expo start --web`
 > (servidor Node nativo). Em **produção** no `onze`, o bundle estático (`expo export`) é
-> servido por um container `web` atrás do Caddy. Ver [deployment.md](deployment.md).
+> servido por um container `web` (nginx) atrás do Caddy.
 
 ---
 
