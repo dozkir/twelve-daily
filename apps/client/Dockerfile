@@ -5,7 +5,7 @@
 #
 # Build (a partir da raiz do repo):
 #   docker build -f apps/client/Dockerfile \
-#     --build-arg EXPO_PUBLIC_API_URL=https://api.twelvedaily.doze.dev.br \
+#     --build-arg EXPO_PUBLIC_API_URL=https://api-twelvedaily.doze.dev.br \
 #     -t twelve-daily-web .
 
 # --- Stage 1: build do export web ---

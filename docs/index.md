@@ -67,10 +67,9 @@ Aplicação de rastreamento de hábitos diários focada em rotina pessoal.
 ### Infraestrutura
 | Documento | Conteúdo |
 |---|---|
-| [infrastructure/hosting.md](infrastructure/hosting.md) | Hospedagem, stack gratuita, banco de dados |
-| [infrastructure/cicd.md](infrastructure/cicd.md) | CI/CD com GitHub Actions |
+| [infrastructure/hosting.md](infrastructure/hosting.md) | Hospedagem (`onze`), banco de dados |
+| [infrastructure/cicd.md](infrastructure/cicd.md) | CI/CD com GitHub Actions (build/test, imagens GHCR, deploy) |
 | [infrastructure/containers.md](infrastructure/containers.md) | Docker, docker-compose |
-| [infrastructure/deployment.md](infrastructure/deployment.md) | Plano de deploy & CD na máquina `onze` (Debian/Proxmox, Docker Compose + Cloudflare Tunnel) |
 
 ### Desenvolvimento
 | Documento | Conteúdo |

@@ -3,7 +3,7 @@
 ## Repositório
 GitHub (monorepo) — todos os apps e packages no mesmo repositório. Branch padrão: **`master`**.
 
-> **Estado atual:** apenas o **pipeline de build/teste** abaixo está implementado (`.github/workflows/dotnet.yml`). Os pipelines de **deploy** (self-hosted no `onze` via Cloudflare Tunnel + EAS) descritos mais adiante são **planejados — ainda não implementados**. O plano detalhado de deploy/CD está em [deployment.md](deployment.md).
+> **Estado atual:** estão implementados o **build/teste** (`.github/workflows/dotnet.yml`), o **build/push de imagens** e o **deploy no `onze`** (ambos em `.github/workflows/images.yml`). O **EAS (mobile)** segue planejado. O plano operacional detalhado do host é um documento de trabalho **local** (não versionado).
 
 ---
 
@@ -43,24 +43,24 @@ jobs:
 > construída com contexto na **raiz** do repo porque o cliente depende de
 > `packages/api-client` via `file:`.
 
-## Pipeline: Deploy no `onze` *(planejado)*
+## Pipeline: Deploy no `onze` ✅
 
-Ainda **não implementado**. Modelo **image-based**: depois do push das imagens, o `onze`
-puxa e recria os containers.
+Job `deploy` em `images.yml` (roda **após** `api`/`web`), no **self-hosted runner** do `onze`
+(`runs-on: [self-hosted, onze]`). Modelo **image-based**: o host puxa as imagens novas e
+recria os containers.
 
 ```yaml
-jobs:
-  deploy:                            # roda em self-hosted runner NO onze
-    - cd /srv/twelve-daily
-        docker compose pull        # baixa as imagens novas do ghcr.io
-        docker compose up -d        # recria os containers atualizados
-        docker image prune -f       # limpa imagens antigas
+deploy:
+  needs: [api, web]
+  runs-on: [self-hosted, onze]
+  # cd /srv/twelve-daily → docker compose pull && up -d && image prune -f
 ```
 
 > ⚠️ Como o `onze` usa **Cloudflare Tunnel** (sem portas de entrada), o GitHub na nuvem **não**
-> consegue fazer SSH direto nele. O deploy roda num **self-hosted runner** instalado no `onze`
-> (que conecta de saída ao GitHub). Alternativa: SSH via Cloudflare. Ver [deployment.md](deployment.md) §8.
-> Sem Fly.io/Azure — tudo no host self-hosted.
+> consegue fazer SSH direto nele. Por isso o deploy roda num **self-hosted runner** instalado no
+> `onze` (conexão de saída). Sem secrets `SSH_*`: o runner tem Docker local e o **host já está
+> autenticado no `ghcr.io`** (login persistente do `doze`, `read:packages`) → o `docker compose
+> pull` baixa as imagens privadas. Sem Fly.io/Azure — tudo no host self-hosted.
 
 ---
 
@@ -83,7 +83,7 @@ jobs:
 
 | Nome | Tipo | Usado em |
 |---|---|---|
-| `EXPO_PUBLIC_API_URL` | **Variable** (repo) | build-arg da imagem Web em `images.yml` (`https://api.twelvedaily.doze.dev.br`) |
+| `EXPO_PUBLIC_API_URL` | **Variable** (repo) | build-arg da imagem Web em `images.yml` (`https://api-twelvedaily.doze.dev.br`) |
 | `EXPO_TOKEN` | Secret | EAS Build autenticado (mobile) |
 
 > Para publicar imagens no **ghcr.io** dentro do próprio repositório, o `GITHUB_TOKEN`
