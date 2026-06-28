@@ -6,7 +6,22 @@
     "development": {
       "developmentClient": true
     },
-    "preview": {},
-    "production": {}
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api-twelvedaily.doze.dev.br"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api-twelvedaily.doze.dev.br"
+      }
+    }
   }
 }
