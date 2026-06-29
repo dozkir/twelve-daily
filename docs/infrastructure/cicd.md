@@ -41,7 +41,8 @@ jobs:
 > Autentica no `ghcr.io` com o `GITHUB_TOKEN` automático (`permissions: packages: write`);
 > sem token manual. Usa cache de layers do Actions (`type=gha`). A imagem da Web é
 > construída com contexto na **raiz** do repo porque o cliente depende de
-> `packages/api-client` via `file:`.
+> `packages/api-client` via `file:`. Commits que mexem **só** em docs ou config exclusiva
+> de mobile (`eas.json`, `google-services.json`) não disparam o workflow (`paths-ignore`).
 
 ## Pipeline: Deploy no `onze` ✅
 
