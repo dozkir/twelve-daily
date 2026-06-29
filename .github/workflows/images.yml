@@ -5,6 +5,17 @@ name: build-and-push-images
 on:
   push:
     branches: [master]
+    # Não reconstrói/redeploya quando o commit mexe SÓ em docs ou config exclusiva de
+    # mobile (não afetam as imagens api/web). Mudança em código real (apps/api,
+    # apps/client web, packages) ou no próprio workflow continua disparando.
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'apps/client/eas.json'
+      - 'apps/client/google-services.json'
+      - 'apps/client/.env.example'
+      - '.gitignore'
+      - '.github/workflows/dotnet.yml'
   workflow_dispatch: {}
 
 permissions:
