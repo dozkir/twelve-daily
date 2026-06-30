@@ -70,10 +70,15 @@ deploy:
 O app mobile **não** roda no `onze` nem em container — é um binário nativo instalado no
 aparelho. A URL da API é embutida no build (`EXPO_PUBLIC_API_URL`, igual à Web).
 
-**Caminho atual — build LOCAL** (`scripts/build-android-apk.sh`): gera um APK de
-distribuição interna (sideload, zero custo) via `expo prebuild` + `gradlew assembleRelease`.
-A **New Architecture está desabilitada** (`app.json` → `newArchEnabled: false`) porque a
-codegen C++ dela estoura o limite de 260 caracteres de path do Windows.
+**Build LOCAL** (`scripts/build-android-apk.sh`): gera um APK de distribuição interna
+(sideload, zero custo) via `expo prebuild` + `gradlew assembleRelease`. A **New
+Architecture está desabilitada** (`app.json` → `newArchEnabled: false`) porque a codegen
+C++ dela estoura o limite de 260 caracteres de path do Windows.
+
+**APK sob demanda no GitHub** (`.github/workflows/mobile-apk.yml`): mesmo build, num runner
+Linux, disparado **só manualmente** (`workflow_dispatch` — Actions → "build-android-apk" →
+Run workflow). O APK fica como **artefato** do run (download por link; expira em 30 dias).
+**Nunca roda automaticamente** a cada merge.
 
 > ⚠️ O build via **EAS** (`apps/client/eas.json`, perfis `preview`/`production`) já está
 > configurado, mas está **bloqueado** por um bug aberto do Expo SDK 54 em monorepo

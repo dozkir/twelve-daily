@@ -1,0 +1,53 @@
+name: build-android-apk
+
+# APK Android sob demanda (NUNCA automático): dispare manualmente em
+# Actions → "build-android-apk" → Run workflow. O APK fica disponível como
+# artefato do run (download por link; expira em 30 dias).
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Instalar dependências do cliente
+        working-directory: apps/client
+        run: npm install
+
+      - name: Prebuild Android (managed)
+        working-directory: apps/client
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Garantir pacotes do Android SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006" >/dev/null
+
+      - name: Compilar APK release
+        working-directory: apps/client/android
+        env:
+          # URL da API embutida no bundle (igual ao build local / Web)
+          EXPO_PUBLIC_API_URL: https://api-twelvedaily.doze.dev.br
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Publicar o APK como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: twelve-daily-apk
+          path: apps/client/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+          if-no-files-found: error
