@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Hangfire;
@@ -61,10 +62,13 @@ public class IntegrationTestBase : IAsyncLifetime
                     // with its own WebApplicationFactory<Program>; when a sibling host is
                     // disposed it disposes a LoggerFactory that Hangfire still references, so
                     // constructing the real IBackgroundJobClient throws ObjectDisposedException.
-                    // These tests don't exercise background scheduling, so stub the client and
-                    // drop the background server.
+                    // We don't run the background server, but we do assert on scheduling, so swap
+                    // the client for a recording fake (registered by its concrete type too, so
+                    // tests can resolve it and inspect created/deleted jobs) and drop the server.
                     services.RemoveAll<IBackgroundJobClient>();
-                    services.AddSingleton<IBackgroundJobClient, NoOpBackgroundJobClient>();
+                    services.AddSingleton<RecordingBackgroundJobClient>();
+                    services.AddSingleton<IBackgroundJobClient>(sp =>
+                        sp.GetRequiredService<RecordingBackgroundJobClient>());
 
                     foreach (var hosted in services
                         .Where(d => d.ServiceType == typeof(IHostedService)
@@ -141,13 +145,36 @@ public record AuthenticatedUser(HttpClient Client, AuthResponse Auth) : IDisposa
 }
 
 /// <summary>
-/// Stub used in tests so handlers can depend on IBackgroundJobClient without building
-/// Hangfire's real client (which touches process-wide static state shared across the
-/// parallel test hosts). Scheduling is a no-op; tests don't assert on background jobs.
+/// Recording fake for IBackgroundJobClient used in tests, so handlers can depend on it without
+/// building Hangfire's real client (which touches process-wide static state shared across the
+/// parallel test hosts). No job is ever executed — there is no background server — but every
+/// Create returns a unique id and every Delete is captured, so a test can assert how many wakes
+/// are still outstanding (Created minus Deleted).
 /// </summary>
-file sealed class NoOpBackgroundJobClient : IBackgroundJobClient
+public sealed class RecordingBackgroundJobClient : IBackgroundJobClient
 {
-    public string Create(Job job, IState state) => string.Empty;
+    private int _counter;
+    private readonly ConcurrentBag<string> _created = new();
+    private readonly ConcurrentBag<string> _deleted = new();
 
-    public bool ChangeState(string jobId, IState state, string expectedState) => true;
+    public IReadOnlyCollection<string> Created => _created;
+    public IReadOnlyCollection<string> Deleted => _deleted;
+
+    /// <summary>Wakes ainda agendados: criados menos cancelados.</summary>
+    public int OutstandingCount => _created.Count - _deleted.Count;
+
+    public string Create(Job job, IState state)
+    {
+        var jobId = Interlocked.Increment(ref _counter).ToString();
+        _created.Add(jobId);
+        return jobId;
+    }
+
+    public bool ChangeState(string jobId, IState state, string expectedState)
+    {
+        // BackgroundJobClientExtensions.Delete(jobId) chega aqui com um DeletedState.
+        if (state is DeletedState)
+            _deleted.Add(jobId);
+        return true;
+    }
 }

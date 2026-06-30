@@ -50,6 +50,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IPushNotificationActionTokenService, PushNotificationActionTokenService>();
+        services.AddScoped<NotificationWakeStore>();
         services.AddScoped<IPushNotificationOrchestrator, PushNotificationOrchestrator>();
         services.AddScoped<PushNotificationJobRunner>();
         services.AddSingleton<IPushNotificationService>(serviceProvider =>

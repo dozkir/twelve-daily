@@ -74,6 +74,7 @@ Response 204
 
 ### Jobs Hangfire
 - O recompute do usuário **auto-agenda** o próximo "acordar" na próxima fronteira relevante (ativação de uma ocorrência futura ou fim da ocorrência ativa) — encadeando o ciclo sem jobs por instância
+- **No máximo um wake pendente por usuário**: antes de agendar o próximo "acordar", o recompute **cancela o anterior** (o id do job é persistido em `NotificationWake`, chave = `UserId`). Sem essa deduplicação, cada mutação dispararia uma cadeia de wakes independente e auto-perpetuante, e todas as cadeias vivas acordariam juntas na fronteira de ativação → **a mesma notificação chegaria várias vezes** (uma por cadeia). `NotificationWake` é detalhe de infraestrutura (mapeado no `AppDbContext`, fora do `Domain` — o domínio não conhece Hangfire)
 - Ao dar/desfazer check, criar/editar/alternar hábito ou alterar schedule, o backend recalcula imediatamente o próximo hábito elegível
 - Persistência no PostgreSQL — jobs sobrevivem a reinicializações
 - Dashboard exposto em `/hangfire` **apenas no ambiente Development** (filtro de autorização atual libera o acesso). As variáveis `HANGFIRE_USER`/`HANGFIRE_PASSWORD` existem no `.env`/compose mas a proteção por autenticação básica ainda **não está implementada**

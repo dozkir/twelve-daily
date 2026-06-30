@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TwelveDaily.Domain.Entities;
+using TwelveDaily.Infrastructure.Services;
 
 namespace TwelveDaily.Infrastructure.Data;
 
@@ -12,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<PushToken> PushTokens => Set<PushToken>();
     public DbSet<GoogleConnection> GoogleConnections => Set<GoogleConnection>();
+    public DbSet<NotificationWake> NotificationWakes => Set<NotificationWake>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -83,6 +85,13 @@ public class AppDbContext : DbContext
             e.HasIndex(g => g.UserId).IsUnique();
             e.Property(g => g.AccessToken).IsRequired();
             e.Property(g => g.RefreshToken).IsRequired();
+        });
+
+        // NotificationWake — 1 wake Hangfire pendente por usuário (chave = UserId).
+        modelBuilder.Entity<NotificationWake>(e =>
+        {
+            e.HasKey(w => w.UserId);
+            e.Property(w => w.JobId).IsRequired().HasMaxLength(128);
         });
     }
 }

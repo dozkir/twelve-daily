@@ -106,7 +106,10 @@ Para cada dia da janela:
 2. Uma ocorrência é "ativa" quando entra na janela de 15 min antes do início e ainda não terminou
 3. Quando faltar ≤ 15 min para o início, a notificação é promovida (persistente no Android)
 4. O recompute AUTO-AGENDA (Hangfire) o próximo "acordar" na próxima fronteira relevante
-   (ativação de uma ocorrência futura ou fim da ocorrência ativa) — encadeando o ciclo
+   (ativação de uma ocorrência futura ou fim da ocorrência ativa) — encadeando o ciclo.
+   Mantém no máximo UM wake pendente por usuário: cancela o anterior antes de agendar o
+   próximo (id persistido em NotificationWake), senão cada mutação criaria uma cadeia
+   independente e a mesma notificação chegaria várias vezes
 5. Se houver check antes do fim:
    - cria o HabitCheck → a ocorrência some do conjunto elegível
    - remove a notificação atual e promove a próxima, se elegível
