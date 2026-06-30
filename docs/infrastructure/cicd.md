@@ -3,7 +3,7 @@
 ## Repositório
 GitHub (monorepo) — todos os apps e packages no mesmo repositório. Branch padrão: **`master`**.
 
-> **Estado atual:** estão implementados o **build/teste** (`.github/workflows/dotnet.yml`), o **build/push de imagens** e o **deploy no `onze`** (ambos em `.github/workflows/images.yml`). O **EAS (mobile)** segue planejado. O plano operacional detalhado do host é um documento de trabalho **local** (não versionado).
+> **Estado atual:** estão implementados o **build/teste** (`.github/workflows/dotnet.yml`), o **build/push de imagens** e o **deploy no `onze`** (ambos em `.github/workflows/images.yml`). O **APK mobile** é gerado por um script local (`scripts/build-android-apk.sh`); o build via EAS está bloqueado por um bug upstream (ver seção Mobile). O plano operacional detalhado do host é um documento de trabalho **local** (não versionado).
 
 ---
 
@@ -65,18 +65,21 @@ deploy:
 
 ---
 
-## Pipeline: Mobile (EAS Build)
+## Pipeline: Mobile (APK Android)
 
-O app mobile **não** roda no `onze` — é compilado na **nuvem do EAS** (Expo), fora dos
-containers. Perfis em `apps/client/eas.json` (a URL da API é embutida no build via
-`env.EXPO_PUBLIC_API_URL`, igual à Web):
+O app mobile **não** roda no `onze` nem em container — é um binário nativo instalado no
+aparelho. A URL da API é embutida no build (`EXPO_PUBLIC_API_URL`, igual à Web).
 
-- **`preview`** → APK de **distribuição interna** (sideload; zero custo). Caminho atual.
-  `eas build -p android --profile preview`
-- **`production`** → AAB para Google Play via `eas submit` (requer conta de dev, US$25). *Planejado.*
+**Caminho atual — build LOCAL** (`scripts/build-android-apk.sh`): gera um APK de
+distribuição interna (sideload, zero custo) via `expo prebuild` + `gradlew assembleRelease`.
+A **New Architecture está desabilitada** (`app.json` → `newArchEnabled: false`) porque a
+codegen C++ dela estoura o limite de 260 caracteres de path do Windows.
 
-Automação (futuro): workflow por **tag `v*`** rodando `eas build` com o secret `EXPO_TOKEN`
-— a build roda na nuvem do EAS; o GitHub Actions só dispara.
+> ⚠️ O build via **EAS** (`apps/client/eas.json`, perfis `preview`/`production`) já está
+> configurado, mas está **bloqueado** por um bug aberto do Expo SDK 54 em monorepo
+> ("No variants exist" — [expo/expo#42370](https://github.com/expo/expo/issues/42370)).
+> Quando corrigido, `eas build -p android --profile preview` vira a alternativa em nuvem,
+> e `production` + `eas submit` o caminho da Play Store (conta de dev, US$25).
 
 ---
 

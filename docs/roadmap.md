@@ -266,10 +266,11 @@ Implementado em `.github/workflows/images.yml`.
 - [x] Build da Web (`expo export` → nginx) → push ghcr.io
 - [x] Deploy no `onze` via **self-hosted runner**: `docker compose pull && up -d` (sem SSH — Cloudflare Tunnel)
 
-### 6.3 — Pipeline Mobile (EAS) 🟡
-- [x] `eas.json`: perfil `preview` (APK interno, zero custo) + `production` (AAB); URL da API via `env`
-- [ ] Build/distribuição do APK (`eas build -p android --profile preview`) — manual por enquanto
-- [ ] Automação por tag `v*` + secret `EXPO_TOKEN` (build na nuvem do EAS)
+### 6.3 — Pipeline Mobile (APK Android) 🟡
+- [x] Build **local** do APK: `scripts/build-android-apk.sh` (`expo prebuild` + `gradlew assembleRelease`; sideload, zero custo)
+- [x] New Architecture desabilitada (`app.json`) — a codegen C++ estoura o limite de path do Windows
+- [x] `eas.json`: perfis `preview`/`production` prontos (URL da API via `env`)
+- [ ] EAS **bloqueado** por bug upstream do SDK 54 ([expo/expo#42370](https://github.com/expo/expo/issues/42370)) — reabilitar quando corrigido
 - [ ] Play Store (`production` + `eas submit`) — requer conta de dev — *planejado*
 
 ### 6.4 — Infraestrutura de produção (`onze`, Debian) 🟡
