@@ -210,7 +210,7 @@ Implementar o código para fazer os testes passarem.
 - [x] Tela de Login
 - [x] Tela de Registro (com seleção de timezone)
 - [x] Armazenamento seguro de tokens (SecureStore mobile / AsyncStorage web)
-- [x] Interceptor Axios para refresh automático (via `onUnauthorized`)
+- [x] Interceptor Axios para refresh automático no 401 (renova + re-tenta, single-flight; `onUnauthorized` só como fallback quando a renovação falha)
 
 ### 5.3 — Timeline (tela principal)
 - [x] Layout de timeline vertical com coluna de horários
@@ -251,6 +251,14 @@ Implementar o código para fazer os testes passarem.
 - [ ] Ação `Check` sem abrir o app
 - [ ] Troca imediata para o próximo hábito quando ele já estiver dentro da janela de 15 minutos
 - [ ] Remoção da persistência ao atingir `ScheduledEndTime`
+
+### 5.8 — Testes do cliente (pendente)
+Hoje o cliente não tem test runner — só `tsc` + `expo lint`. Ver infra proposta e prioridades em [architecture/testing.md](architecture/testing.md#testes-do-front-end-appsclient--planejado-ainda-não-implementado).
+- [ ] Configurar `jest-expo` + `@testing-library/react-native` (script `test` no workspace + `turbo run test`)
+- [ ] Mocks de rede (axios do api-client) e de storage nativo (`expo-secure-store` / AsyncStorage)
+- [ ] Cobrir o **refresh-and-retry no 401** (renova + re-tenta, single-flight, fallback de logout, não re-tentar `/auth/*`)
+- [ ] Cobrir schemas Zod dos forms (`habit-form-values.ts`)
+- [ ] Cobrir hooks de dados por feature (`src/<feature>/queries.ts`) — query keys + invalidação
 
 ---
 

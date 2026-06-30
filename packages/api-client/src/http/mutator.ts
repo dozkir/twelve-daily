@@ -1,10 +1,21 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
+import axios, {
+  type AxiosError,
+  type AxiosInstance,
+  type AxiosRequestConfig,
+  type InternalAxiosRequestConfig
+} from "axios";
 
 export const AXIOS_INSTANCE: AxiosInstance = axios.create();
 
 export interface ApiClientConfig {
   baseUrl: string;
   getAccessToken: () => string | null;
+  /**
+   * Renova o access token a partir do refresh token persistido. Deve resolver com
+   * o novo access token, ou `null` se a renovação falhar (refresh token inválido
+   * ou expirado). Quando omitido, um 401 simplesmente dispara `onUnauthorized`.
+   */
+  refreshAccessToken?: () => Promise<string | null>;
   onUnauthorized?: () => Promise<void> | void;
 }
 
@@ -12,12 +23,33 @@ let requestInterceptorId: number | null = null;
 let responseInterceptorId: number | null = null;
 
 /**
- * Wires the shared axios instance used by the orval-generated client: sets the
- * base URL, attaches the bearer token on every request, and runs `onUnauthorized`
- * on a 401. Call once during app bootstrap; safe to call again to re-configure
- * (previous interceptors are ejected).
+ * Single-flight: enquanto um refresh está em andamento, todas as requisições que
+ * tomarem 401 aguardam a MESMA promessa em vez de dispararem refreshes paralelos.
+ * O backend rotaciona o refresh token a cada uso, então refreshes concorrentes com
+ * o mesmo token fariam o segundo falhar — e deslogariam o usuário sem necessidade.
  */
-export const configureApiClient = ({ baseUrl, getAccessToken, onUnauthorized }: ApiClientConfig) => {
+let refreshPromise: Promise<string | null> | null = null;
+
+type RetriableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+
+// Endpoints de autenticação (login/register/refresh/logout) não devem disparar o
+// fluxo de refresh-and-retry: um 401 ali é uma falha legítima (ex.: credenciais
+// inválidas, refresh token morto) que deve propagar, não ser re-tentada.
+const isAuthRoute = (url?: string) => !!url && url.includes("/auth/");
+
+/**
+ * Wires the shared axios instance used by the orval-generated client: sets the
+ * base URL, attaches the bearer token on every request, and handles 401s by
+ * renovando o access token e re-tentando a requisição original uma vez. Só quando
+ * a renovação falha é que `onUnauthorized` é chamado. Call once during app
+ * bootstrap; safe to call again to re-configure (previous interceptors are ejected).
+ */
+export const configureApiClient = ({
+  baseUrl,
+  getAccessToken,
+  refreshAccessToken,
+  onUnauthorized
+}: ApiClientConfig) => {
   AXIOS_INSTANCE.defaults.baseURL = baseUrl;
 
   if (requestInterceptorId !== null) {
@@ -37,8 +69,36 @@ export const configureApiClient = ({ baseUrl, getAccessToken, onUnauthorized }: 
   }
   responseInterceptorId = AXIOS_INSTANCE.interceptors.response.use(
     (response) => response,
-    async (error) => {
-      if (error?.response?.status === 401 && onUnauthorized) {
+    async (error: AxiosError) => {
+      const config = error.config as RetriableConfig | undefined;
+      const status = error.response?.status;
+
+      const canRetry =
+        status === 401 &&
+        !!config &&
+        !config._retry &&
+        !isAuthRoute(config.url) &&
+        !!refreshAccessToken;
+
+      if (canRetry && config) {
+        config._retry = true;
+
+        // Compartilha um único refresh entre todas as requisições concorrentes.
+        refreshPromise = refreshPromise ?? refreshAccessToken!();
+        let newToken: string | null;
+        try {
+          newToken = await refreshPromise;
+        } finally {
+          refreshPromise = null;
+        }
+
+        if (newToken) {
+          config.headers.Authorization = `Bearer ${newToken}`;
+          return AXIOS_INSTANCE.request(config);
+        }
+      }
+
+      if (status === 401 && onUnauthorized) {
         await onUnauthorized();
       }
 

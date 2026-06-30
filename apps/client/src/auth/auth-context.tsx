@@ -31,10 +31,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const hasBootstrappedRef = useRef(false);
 
-  // The generated client reads the token lazily through this ref, so a single
-  // axios configuration stays valid as the token changes.
+  // The generated client reads the tokens lazily through these refs, so a single
+  // axios configuration stays valid as the tokens change.
   const accessTokenRef = useRef<string | null>(null);
   accessTokenRef.current = accessToken;
+  const refreshTokenRef = useRef<string | null>(null);
+  refreshTokenRef.current = refreshToken;
 
   const storeTokens = useCallback(async (tokens: AuthResult) => {
     setAccessToken(tokens.accessToken);
@@ -48,32 +50,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await tokenStorage.clearRefreshToken();
   }, []);
 
+  // Renova o access token a partir do refresh token persistido. Estável (lê os
+  // tokens por ref) para poder ser passado uma única vez ao axios. Resolve com o
+  // novo access token, ou `null` se a renovação falhar (refresh token morto).
+  const refreshAccessToken = useCallback(async (): Promise<string | null> => {
+    const token = refreshTokenRef.current ?? (await tokenStorage.getRefreshToken());
+
+    if (!token) {
+      return null;
+    }
+
+    try {
+      const tokens = await authRefresh({ refreshToken: token });
+      // Atualiza os refs de forma síncrona para que o retry da requisição que
+      // disparou o refresh já use o novo token — o setState só reflete no próximo
+      // render, tarde demais para o interceptor.
+      accessTokenRef.current = tokens.accessToken;
+      refreshTokenRef.current = tokens.refreshToken;
+      setAccessToken(tokens.accessToken);
+      setRefreshToken(tokens.refreshToken);
+      await tokenStorage.setRefreshToken(tokens.refreshToken);
+      return tokens.accessToken;
+    } catch {
+      return null;
+    }
+  }, []);
+
   // Configure the shared axios instance once, before any request is fired.
   const isConfiguredRef = useRef(false);
   if (!isConfiguredRef.current) {
     configureApiClient({
       baseUrl: API_URL,
       getAccessToken: () => accessTokenRef.current,
+      refreshAccessToken,
       onUnauthorized: clearSession
     });
     isConfiguredRef.current = true;
   }
 
   const refresh = useCallback(async () => {
-    const token = refreshToken ?? (await tokenStorage.getRefreshToken());
-
-    if (!token) {
-      await clearSession();
-      return;
-    }
-
-    try {
-      const tokens = await authRefresh({ refreshToken: token });
-      await storeTokens(tokens);
-    } catch {
+    const newToken = await refreshAccessToken();
+    if (!newToken) {
       await clearSession();
     }
-  }, [refreshToken, clearSession, storeTokens]);
+  }, [refreshAccessToken, clearSession]);
 
   const login = useCallback(
     async (payload: LoginRequest) => {
