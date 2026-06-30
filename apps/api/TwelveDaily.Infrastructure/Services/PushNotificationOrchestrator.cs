@@ -18,6 +18,7 @@ public class PushNotificationOrchestrator : IPushNotificationOrchestrator
     private readonly IPushNotificationService _pushNotificationService;
     private readonly IPushNotificationActionTokenService _actionTokenService;
     private readonly IBackgroundJobClient _backgroundJobClient;
+    private readonly NotificationWakeStore _wakeStore;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly PushNotificationsOptions _options;
     private readonly ILogger<PushNotificationOrchestrator> _logger;
@@ -31,6 +32,7 @@ public class PushNotificationOrchestrator : IPushNotificationOrchestrator
         IPushNotificationService pushNotificationService,
         IPushNotificationActionTokenService actionTokenService,
         IBackgroundJobClient backgroundJobClient,
+        NotificationWakeStore wakeStore,
         IDateTimeProvider dateTimeProvider,
         IOptions<PushNotificationsOptions> options,
         ILogger<PushNotificationOrchestrator> logger)
@@ -43,6 +45,7 @@ public class PushNotificationOrchestrator : IPushNotificationOrchestrator
         _pushNotificationService = pushNotificationService;
         _actionTokenService = actionTokenService;
         _backgroundJobClient = backgroundJobClient;
+        _wakeStore = wakeStore;
         _dateTimeProvider = dateTimeProvider;
         _options = options.Value;
         _logger = logger;
@@ -113,7 +116,7 @@ public class PushNotificationOrchestrator : IPushNotificationOrchestrator
                 body), ct);
         }
 
-        ScheduleNextWake(userId, now, occurrences, activationLead);
+        await ScheduleNextWakeAsync(userId, now, occurrences, activationLead, ct);
     }
 
     /// <summary>
@@ -155,8 +158,12 @@ public class PushNotificationOrchestrator : IPushNotificationOrchestrator
     /// <summary>
     /// Agenda o próximo recompute na fronteira mais próxima em que o conjunto elegível muda
     /// (ativação de uma ocorrência futura ou fim da ocorrência ativa). Encadeia o ciclo.
+    /// Mantém <b>no máximo um wake pendente por usuário</b>: cancela o anterior antes de agendar
+    /// o próximo. Sem isso, cada recompute (uma por mutação de hábito/schedule/check) criaria uma
+    /// cadeia independente, e todas disparariam juntas na fronteira → notificações duplicadas.
     /// </summary>
-    private void ScheduleNextWake(Guid userId, DateTime now, List<Occurrence> occurrences, TimeSpan activationLead)
+    private async Task ScheduleNextWakeAsync(
+        Guid userId, DateTime now, List<Occurrence> occurrences, TimeSpan activationLead, CancellationToken ct)
     {
         var boundaries = new List<DateTime>();
         foreach (var occ in occurrences)
@@ -168,16 +175,30 @@ public class PushNotificationOrchestrator : IPushNotificationOrchestrator
                 boundaries.Add(occ.EndUtc);
         }
 
+        var previousJobId = await _wakeStore.GetJobIdAsync(userId, ct);
+
         if (boundaries.Count == 0)
+        {
+            if (previousJobId != null)
+            {
+                _backgroundJobClient.Delete(previousJobId);
+                await _wakeStore.ClearAsync(userId, ct);
+            }
             return;
+        }
 
         var nextWake = boundaries.Min();
         var delay = nextWake - now;
         if (delay <= TimeSpan.Zero)
             return;
 
-        _backgroundJobClient.Schedule<PushNotificationJobRunner>(
+        if (previousJobId != null)
+            _backgroundJobClient.Delete(previousJobId);
+
+        var jobId = _backgroundJobClient.Schedule<PushNotificationJobRunner>(
             runner => runner.RecomputeUserNotificationsAsync(userId, CancellationToken.None), delay);
+
+        await _wakeStore.SetJobIdAsync(userId, jobId, ct);
     }
 
     private static string BuildTitle(DateTime startUtc, DateTime endUtc, TimeZoneInfo tz)
