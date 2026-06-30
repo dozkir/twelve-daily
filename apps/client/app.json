@@ -4,6 +4,7 @@
     "slug": "twelve-daily",
     "scheme": "twelvedaily",
     "version": "0.1.0",
+    "newArchEnabled": false,
     "orientation": "portrait",
     "icon": "./assets/twelve-daily-icon.png",
     "platforms": [

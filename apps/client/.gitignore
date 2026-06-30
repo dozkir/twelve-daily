@@ -4,3 +4,9 @@
 
 expo-env.d.ts
 # @end expo-cli
+
+# Projetos nativos: managed workflow → o EAS faz prebuild a partir do app.json.
+# Mantidos só LOCALMENTE (para `expo run:android`/`run:ios`), nunca versionados —
+# versioná-los faz o EAS compilar o nativo (Gradle) em vez do prebuild gerenciado.
+/android
+/ios

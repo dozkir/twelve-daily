@@ -455,3 +455,5 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+# APK gerado localmente (scripts/build-android-apk.sh)
+*.apk
