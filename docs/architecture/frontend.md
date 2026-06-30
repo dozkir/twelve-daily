@@ -46,7 +46,7 @@ src/
 | **Query keys centralizadas** | `src/api/query-keys.ts` | fonte única de chaves (`habitKeys`, `timelineKeys`, …); evita typo e invalidação que não atinge o cache |
 | **Form + schema colocados** | `src/<feature>/*-form.tsx` | React Hook Form + Zod juntos |
 | **Tema central** | `src/theme.ts` + `StyleSheet` | estilo consistente (sem NativeWind) |
-| **Context para sessão** | `src/auth/auth-context.tsx` | axios configurado uma vez; token lido por ref |
+| **Context para sessão** | `src/auth/auth-context.tsx` | axios configurado uma vez; tokens lidos por ref; no 401 o interceptor renova o access token e re-tenta a requisição (single-flight), só deslogando se a renovação falhar |
 
 ---
 
