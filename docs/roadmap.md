@@ -1,7 +1,5 @@
 # Twelve Daily — Roadmap de Desenvolvimento
 
-> ⚠️ **Documento histórico.** Este roadmap foi escrito sobre o modelo antigo de `HabitInstance` (geração de instâncias, `startToday`, check por instância). Esse modelo foi **substituído** pelo modelo de **check** `(HabitId, Date)` sem materialização — ver [habit-check-refactor](specs/habit-check-refactor.md). Itens que mencionam "instância", "gerar rotina", `startToday`, `CompletedAt` ou `HabitInstance` refletem o planejamento da época, não o código atual. Para o estado atual do domínio, consulte [domain/](domain/) e [specs/](specs/).
-
 ## Fases
 
 ```
@@ -31,6 +29,11 @@
 - [x] CI/CD (`infrastructure/cicd.md`)
 - [x] Containers (`infrastructure/containers.md`)
 - [x] Guia de desenvolvimento (`development.md`)
+- [x] Referência rápida consolidada (`claude.md`)
+- [x] RFC do modelo de check (`specs/habit-check-refactor.md`)
+- [x] Spec de i18n (`specs/i18n.md`)
+- [x] Guia de implementação de push notifications (`push-notifications-implementation.md`)
+- [x] Breakdown técnico de push notifications (`push-notifications-file-breakdown.md`)
 
 ---
 
