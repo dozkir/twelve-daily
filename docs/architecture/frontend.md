@@ -33,8 +33,8 @@ src/
   <feature>/               ← habits, timeline, dashboard, settings, auth, notifications
     queries.ts             ← hooks de estado de servidor (useQuery/useMutation) + invalidação
     <feature>-form.tsx     ← formulário + schema Zod (quando houver)
-  ui/                      ← componentes burros reutilizáveis (Screen, FormInput, TimeInput)
-  theme.ts / date.ts / config.ts
+  ui/                      ← componentes burros reutilizáveis (Screen, FormInput, TimeInput, TimezoneSelect)
+  theme.ts / date.ts / timezones.ts / config.ts
 ```
 
 ### Padrões/convenções
