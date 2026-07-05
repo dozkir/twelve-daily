@@ -1,5 +1,5 @@
-import { authLogoutAll, usersGetProfile, usersSendRemotePushTest } from "@twelve-daily/api-client";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { authLogoutAll, usersGetProfile, usersSendRemotePushTest, usersUpdateTimezone } from "@twelve-daily/api-client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { profileKeys } from "@/src/api/query-keys";
 
@@ -23,3 +23,14 @@ export const useSendTestPushMutation = () =>
   useMutation({
     mutationFn: () => usersSendRemotePushTest()
   });
+
+export const useUpdateTimezoneMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (timezone: string) => usersUpdateTimezone({ timezone }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: profileKeys.all });
+    }
+  });
+};

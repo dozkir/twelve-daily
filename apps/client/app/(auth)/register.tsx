@@ -8,8 +8,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/src/auth/auth-context";
 import { getApiErrorMessage } from "@/src/api/error";
 import { colors } from "@/src/theme";
+import { getDeviceTimezone } from "@/src/timezones";
 import { FormInput } from "@/src/ui/form-input";
 import { Screen } from "@/src/ui/screen";
+import { TimezoneSelect } from "@/src/ui/timezone-select";
 
 const schema = z.object({
   email: z.string().email("Invalid email"),
@@ -22,7 +24,7 @@ type RegisterValues = z.infer<typeof schema>;
 export default function RegisterScreen() {
   const { register } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  const timezone = getDeviceTimezone();
 
   const { control, handleSubmit, formState } = useForm<RegisterValues>({
     resolver: zodResolver(schema),
@@ -44,7 +46,7 @@ export default function RegisterScreen() {
     <Screen title="Create account" subtitle="Start your routine with Twelve Daily">
       <FormInput control={control} name="email" label="Email" placeholder="name@email.com" />
       <FormInput control={control} name="password" label="Password" secureTextEntry />
-      <FormInput control={control} name="timezone" label="Timezone (IANA)" placeholder="America/Sao_Paulo" />
+      <TimezoneSelect control={control} name="timezone" label="Timezone" />
 
       <TouchableOpacity style={styles.button} onPress={submit}>
         <Text style={styles.buttonText}>
