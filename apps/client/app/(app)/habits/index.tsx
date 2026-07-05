@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity,
 import { getApiErrorMessage } from "@/src/api/error";
 import { useDeleteHabitMutation, useHabitsQuery, useToggleHabitMutation } from "@/src/habits/queries";
 import { colors } from "@/src/theme";
+import { confirmAsync } from "@/src/ui/confirm";
 import { Screen } from "@/src/ui/screen";
 
 export default function HabitsScreen() {
@@ -87,21 +88,19 @@ export default function HabitsScreen() {
                 activeOpacity={0.85}
                 style={[styles.actionButton, styles.dangerActionButton]}
                 disabled={deleteHabitMutation.isPending || toggleHabitMutation.isPending}
-                onPress={() => {
-                  Alert.alert(
-                    "Delete habit",
-                    `Are you sure? All history for ${item.name} will be deleted too. If you want to keep this data, deactivate the habit instead.`,
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Delete",
-                        style: "destructive",
-                        onPress: () => deleteHabitMutation.mutate(item.id, {
-                          onError: (error) => Alert.alert("Unable to delete habit", getApiErrorMessage(error))
-                        })
-                      }
-                    ]
-                  );
+                onPress={async () => {
+                  const confirmed = await confirmAsync({
+                    title: "Delete habit",
+                    message: `Are you sure? All history for ${item.name} will be deleted too. If you want to keep this data, deactivate the habit instead.`,
+                    confirmText: "Delete",
+                    destructive: true
+                  });
+                  if (!confirmed) {
+                    return;
+                  }
+                  deleteHabitMutation.mutate(item.id, {
+                    onError: (error) => Alert.alert("Unable to delete habit", getApiErrorMessage(error))
+                  });
                 }}>
                 <Text style={styles.dangerActionButtonText}>Delete</Text>
               </TouchableOpacity>
