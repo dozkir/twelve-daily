@@ -13,8 +13,11 @@ import { Screen } from "@/src/ui/screen";
 const DEFAULT_START_HOUR = 0;
 const DEFAULT_END_HOUR_EXCLUSIVE = 24;
 const HOUR_HEIGHT = 128;
-const MIN_CARD_HEIGHT = 56;
 const CARD_LINE_HEIGHT = 18;
+const CARD_VERTICAL_PADDING = 6;
+// Floor tall enough to show a single full title line (line + top/bottom padding),
+// but no taller — so short habits render short and their duration stays legible.
+const MIN_CARD_HEIGHT = CARD_LINE_HEIGHT + (CARD_VERTICAL_PADDING * 2);
 const POPOVER_WIDTH = 240;
 const POPOVER_ESTIMATED_HEIGHT = 126;
 const POPOVER_OFFSET = 10;
@@ -479,6 +482,12 @@ export default function TimelineScreen() {
 
             {positionedItems.map(({ item, key, top, height, column, totalColumns }) => {
               const isDone = !!item.checkedAt;
+              // Fit the title to the card's real height: use as many lines as the
+              // duration allows and clip the rest, so the text never grows the card.
+              const titleLines = Math.max(
+                1,
+                Math.floor((height - (CARD_VERTICAL_PADDING * 2)) / CARD_LINE_HEIGHT)
+              );
 
               return (
                 <TouchableOpacity
@@ -499,7 +508,7 @@ export default function TimelineScreen() {
                     selectedItemKey === key ? styles.cardSelected : null
                   ]}
                   onPress={() => setSelectedItemKey((current) => current === key ? null : key)}>
-                  <Text style={[styles.cardTitle, isDone ? styles.cardTitleDone : null]} numberOfLines={2} ellipsizeMode="tail">
+                  <Text style={[styles.cardTitle, isDone ? styles.cardTitleDone : null]} numberOfLines={titleLines} ellipsizeMode="tail">
                     {item.emoji} {item.name}
                   </Text>
                 </TouchableOpacity>
@@ -665,7 +674,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: CARD_VERTICAL_PADDING,
     alignItems: "flex-start",
     justifyContent: "center",
     overflow: "hidden"
