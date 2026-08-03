@@ -47,6 +47,7 @@ src/
 | **Form + schema colocados** | `src/<feature>/*-form.tsx` | React Hook Form + Zod juntos |
 | **Tema central** | `src/theme.ts` + `StyleSheet` | estilo consistente (sem NativeWind) |
 | **Context para sessão** | `src/auth/auth-context.tsx` | axios configurado uma vez; tokens lidos por ref; no 401 o interceptor renova o access token e re-tenta a requisição (single-flight), só deslogando se a renovação falhar |
+| **Trava de toque repetido** | `src/ui/press-guard.ts` | todo botão que dispara ação ou navegação passa por `useGuardedPress`/`useGuardedNavigation`; `disabled={isPending}` sozinho não segura toques dentro do mesmo frame |
 
 ---
 
@@ -92,6 +93,23 @@ export const useToggleCheckMutation = (date: string) => {
 const timelineQuery = useDailyQuery(date);
 const checkMutation = useToggleCheckMutation(date);
 checkMutation.mutate({ habitId, isDone }, { onError: (e) => setActionError(getApiErrorMessage(e)) });
+```
+
+Quando o botão precisa de **trava de toque repetido** (`useGuardedPress`), a tela usa
+`mutateAsync` + `try/catch` no lugar de `mutate` + callbacks: a trava só sabe quando
+soltar se receber a promise da ação. Os efeitos de UI continuam na tela.
+
+```tsx
+const { onPress: toggleCheck, isRunning: isTogglingCheck } = useGuardedPress(
+  async (habitId: string, isDone: boolean) => {
+    try {
+      await checkMutation.mutateAsync({ habitId, isDone });
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {
+      setActionError(getApiErrorMessage(e));
+    }
+  }
+);
 ```
 
 > **i18n:** as strings de UI ainda têm idioma misto (inglês + alguns textos em

@@ -7,6 +7,7 @@ import { useHabitDetailQuery, useUpdateHabitMutation } from "@/src/habits/querie
 import { HabitForm } from "@/src/habits/habit-form";
 import { buildHabitFormInitialValues, buildHabitSchedulesPayload } from "@/src/habits/habit-form-values";
 import { colors } from "@/src/theme";
+import { useGuardedNavigation } from "@/src/ui/press-guard";
 import { Screen } from "@/src/ui/screen";
 
 export default function EditHabitScreen() {
@@ -22,12 +23,14 @@ export default function EditHabitScreen() {
     [habitQuery.data]
   );
 
+  const backToHabits = useGuardedNavigation(() => router.replace("/(app)/habits"));
+
   if (!habitId) {
     return (
       <Screen title="Edit habit" subtitle="Invalid habit">
         <View style={styles.feedbackContainer}>
           <Text style={styles.feedbackText}>Could not identify the selected habit.</Text>
-          <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace("/(app)/habits")}>
+          <TouchableOpacity style={styles.secondaryButton} onPress={backToHabits}>
             <Text style={styles.secondaryButtonText}>Back to habits</Text>
           </TouchableOpacity>
         </View>
@@ -50,7 +53,7 @@ export default function EditHabitScreen() {
       <Screen title="Edit habit" subtitle="Unable to load habit">
         <View style={styles.feedbackContainer}>
           <Text style={styles.feedbackText}>{getApiErrorMessage(habitQuery.error)}</Text>
-          <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace("/(app)/habits")}>
+          <TouchableOpacity style={styles.secondaryButton} onPress={backToHabits}>
             <Text style={styles.secondaryButtonText}>Back to habits</Text>
           </TouchableOpacity>
         </View>

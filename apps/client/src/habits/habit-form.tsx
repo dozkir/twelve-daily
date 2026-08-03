@@ -14,6 +14,7 @@ import {
 } from "@/src/habits/habit-form-values";
 import { colors } from "@/src/theme";
 import { FormInput } from "@/src/ui/form-input";
+import { useGuardedNavigation, useGuardedPress } from "@/src/ui/press-guard";
 import { Screen } from "@/src/ui/screen";
 import { TimeInput } from "@/src/ui/time-input";
 
@@ -212,13 +213,20 @@ export const HabitForm = ({
     setValue("daysOfWeek", nextDays, { shouldDirty: true, shouldValidate: true });
   };
 
-  const submit = handleSubmit(async (values) => {
-    try {
-      await onSubmit(values);
-    } catch {
-      // Parent handles the submission error state.
-    }
-  });
+  const { onPress: submit, isRunning: isSubmitPending } = useGuardedPress(
+    handleSubmit(async (values) => {
+      try {
+        await onSubmit(values);
+      } catch {
+        // Parent handles the submission error state.
+      }
+    })
+  );
+
+  // O pai passa `isSubmitting` a partir do `isPending` da mutation; a trava
+  // local cobre a janela antes desse flag voltar pelo próximo render.
+  const isBusy = isSubmitting || isSubmitPending;
+  const cancel = useGuardedNavigation(onCancel);
 
   return (
     <Screen title={title} subtitle={subtitle}>
@@ -322,13 +330,16 @@ export const HabitForm = ({
 
         {submitError ? <Text style={styles.errorText}>{submitError}</Text> : null}
 
-        <TouchableOpacity style={styles.primaryButton} onPress={submit}>
-          <Text style={styles.primaryButtonText}>{isSubmitting ? submittingLabel : submitLabel}</Text>
+        <TouchableOpacity
+          style={[styles.primaryButton, isBusy ? styles.primaryButtonDisabled : null]}
+          onPress={submit}
+          disabled={isBusy}>
+          <Text style={styles.primaryButtonText}>{isBusy ? submittingLabel : submitLabel}</Text>
         </TouchableOpacity>
 
         {footerNote ? <Text style={styles.footerNote}>{footerNote}</Text> : null}
 
-        <TouchableOpacity style={styles.secondaryButton} onPress={onCancel}>
+        <TouchableOpacity style={styles.secondaryButton} onPress={cancel} disabled={isBusy}>
           <Text style={styles.secondaryButtonText}>Cancel</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -478,6 +489,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     paddingHorizontal: 16,
     paddingVertical: 12
+  },
+  primaryButtonDisabled: {
+    opacity: 0.5
   },
   primaryButtonText: {
     textAlign: "center",

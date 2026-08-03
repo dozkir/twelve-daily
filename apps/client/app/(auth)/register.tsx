@@ -10,6 +10,7 @@ import { getApiErrorMessage } from "@/src/api/error";
 import { colors } from "@/src/theme";
 import { getDeviceTimezone } from "@/src/timezones";
 import { FormInput } from "@/src/ui/form-input";
+import { useGuardedPress } from "@/src/ui/press-guard";
 import { Screen } from "@/src/ui/screen";
 import { TimezoneSelect } from "@/src/ui/timezone-select";
 
@@ -26,21 +27,23 @@ export default function RegisterScreen() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const timezone = getDeviceTimezone();
 
-  const { control, handleSubmit, formState } = useForm<RegisterValues>({
+  const { control, handleSubmit } = useForm<RegisterValues>({
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "", timezone }
   });
 
-  const submit = handleSubmit(async (values) => {
-    setSubmitError(null);
+  const { onPress: submit, isRunning: isSubmitting } = useGuardedPress(
+    handleSubmit(async (values) => {
+      setSubmitError(null);
 
-    try {
-      await register(values);
-      router.replace("/(app)/timeline");
-    } catch (error) {
-      setSubmitError(getApiErrorMessage(error));
-    }
-  });
+      try {
+        await register(values);
+        router.replace("/(app)/timeline");
+      } catch (error) {
+        setSubmitError(getApiErrorMessage(error));
+      }
+    })
+  );
 
   return (
     <Screen title="Create account" subtitle="Start your routine with Twelve Daily">
@@ -48,9 +51,12 @@ export default function RegisterScreen() {
       <FormInput control={control} name="password" label="Password" secureTextEntry />
       <TimezoneSelect control={control} name="timezone" label="Timezone" />
 
-      <TouchableOpacity style={styles.button} onPress={submit}>
+      <TouchableOpacity
+        style={[styles.button, isSubmitting ? styles.buttonDisabled : null]}
+        onPress={submit}
+        disabled={isSubmitting}>
         <Text style={styles.buttonText}>
-          {formState.isSubmitting ? "Creating..." : "Create account"}
+          {isSubmitting ? "Creating..." : "Create account"}
         </Text>
       </TouchableOpacity>
 
@@ -75,6 +81,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     paddingHorizontal: 16,
     paddingVertical: 12
+  },
+  buttonDisabled: {
+    opacity: 0.5
   },
   buttonText: {
     textAlign: "center",

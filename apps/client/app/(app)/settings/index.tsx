@@ -9,6 +9,7 @@ import {
   useUpdateTimezoneMutation
 } from "@/src/settings/queries";
 import { colors } from "@/src/theme";
+import { useGuardedPress } from "@/src/ui/press-guard";
 import { Screen } from "@/src/ui/screen";
 import { TimezoneSelect } from "@/src/ui/timezone-select";
 
@@ -34,6 +35,19 @@ export default function SettingsScreen() {
       reset({ timezone: profileTimezone });
     }
   }, [profileTimezone, reset]);
+
+  const { onPress: signOut, isRunning: isSigningOut } = useGuardedPress(() => logout());
+
+  const { onPress: signOutEverywhere, isRunning: isSigningOutEverywhere } = useGuardedPress(
+    async () => {
+      try {
+        await logoutAllMutation.mutateAsync();
+        await logout();
+      } catch {
+        Alert.alert("Error", "Could not sign out from the other devices.");
+      }
+    }
+  );
 
   const saveTimezone = handleSubmit((values) => {
     updateTimezoneMutation.mutate(values.timezone, {
@@ -64,12 +78,20 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={() => logout()}>
-        <Text style={styles.buttonText}>Logout</Text>
+      <TouchableOpacity
+        style={[styles.logoutButton, isSigningOut ? styles.buttonDisabled : null]}
+        onPress={signOut}
+        disabled={isSigningOut || isSigningOutEverywhere}>
+        <Text style={styles.buttonText}>{isSigningOut ? "Logging out..." : "Logout"}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.logoutAllButton} onPress={() => logoutAllMutation.mutate(undefined, { onSuccess: () => logout() })}>
-        <Text style={styles.buttonText}>Logout all devices</Text>
+      <TouchableOpacity
+        style={[styles.logoutAllButton, isSigningOutEverywhere ? styles.buttonDisabled : null]}
+        onPress={signOutEverywhere}
+        disabled={isSigningOut || isSigningOutEverywhere}>
+        <Text style={styles.buttonText}>
+          {isSigningOutEverywhere ? "Logging out..." : "Logout all devices"}
+        </Text>
       </TouchableOpacity>
     </Screen>
   );
@@ -115,6 +137,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.danger,
     paddingHorizontal: 16,
     paddingVertical: 12
+  },
+  buttonDisabled: {
+    opacity: 0.5
   },
   buttonText: {
     textAlign: "center",
