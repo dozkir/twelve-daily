@@ -1,5 +1,5 @@
 import { Link, router } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { z } from "zod";
@@ -24,6 +24,10 @@ type RegisterValues = z.infer<typeof schema>;
 export default function RegisterScreen() {
   const { register } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // `formState.isSubmitting` só desabilita o botão no render seguinte, então
+  // toques em sequência rápida ainda chegariam aqui e disparariam vários cadastros.
+  // Esta trava é síncrona e fecha essa janela.
+  const isSubmittingRef = useRef(false);
   const timezone = getDeviceTimezone();
 
   const { control, handleSubmit, formState } = useForm<RegisterValues>({
@@ -32,6 +36,11 @@ export default function RegisterScreen() {
   });
 
   const submit = handleSubmit(async (values) => {
+    if (isSubmittingRef.current) {
+      return;
+    }
+
+    isSubmittingRef.current = true;
     setSubmitError(null);
 
     try {
@@ -39,6 +48,8 @@ export default function RegisterScreen() {
       router.replace("/(app)/timeline");
     } catch (error) {
       setSubmitError(getApiErrorMessage(error));
+    } finally {
+      isSubmittingRef.current = false;
     }
   });
 
@@ -48,7 +59,10 @@ export default function RegisterScreen() {
       <FormInput control={control} name="password" label="Password" secureTextEntry />
       <TimezoneSelect control={control} name="timezone" label="Timezone" />
 
-      <TouchableOpacity style={styles.button} onPress={submit}>
+      <TouchableOpacity
+        style={[styles.button, formState.isSubmitting ? styles.buttonDisabled : null]}
+        onPress={submit}
+        disabled={formState.isSubmitting}>
         <Text style={styles.buttonText}>
           {formState.isSubmitting ? "Creating..." : "Create account"}
         </Text>
@@ -75,6 +89,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     paddingHorizontal: 16,
     paddingVertical: 12
+  },
+  buttonDisabled: {
+    opacity: 0.5
   },
   buttonText: {
     textAlign: "center",
