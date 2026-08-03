@@ -8,6 +8,7 @@ import { getApiErrorMessage } from "@/src/api/error";
 import { buildHourRange, formatHourLabel, formatShortTime, formatTimelineDateLabel, formatTimelineDayLabel, parseTimeToMinutes, shiftIsoDate, toIsoDate } from "@/src/date";
 import { colors } from "@/src/theme";
 import { useDailyQuery, useToggleCheckMutation } from "@/src/timeline/queries";
+import { useGuardedPress } from "@/src/ui/press-guard";
 import { Screen } from "@/src/ui/screen";
 
 const DEFAULT_START_HOUR = 0;
@@ -152,19 +153,23 @@ export default function TimelineScreen() {
 
   // O hook cuida da chamada + invalidação de cache; aqui ficam os efeitos de UI
   // (limpar erro/seleção e o feedback tátil) compartilhados pelos dois botões de check.
-  const toggleCheck = (habitId: string, isDone: boolean) => {
-    checkMutation.mutate(
-      { habitId, isDone },
-      {
-        onSuccess: async () => {
-          setActionError(null);
-          setSelectedItemKey(null);
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        },
-        onError: (error) => setActionError(getApiErrorMessage(error))
+  // `mutateAsync` (em vez de `mutate` com callbacks) para que a trava de toque
+  // saiba quando a ação terminou — sem ela, o intervalo até `isPending` chegar ao
+  // botão deixa passar um segundo check no mesmo hábito/dia.
+  const { onPress: toggleCheck, isRunning: isTogglingCheck } = useGuardedPress(
+    async (habitId: string, isDone: boolean) => {
+      try {
+        await checkMutation.mutateAsync({ habitId, isDone });
+        setActionError(null);
+        setSelectedItemKey(null);
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (error) {
+        setActionError(getApiErrorMessage(error));
       }
-    );
-  };
+    }
+  );
+
+  const isCheckBusy = isTogglingCheck || checkMutation.isPending;
 
   const activeDay = timelineQuery.data?.days.find((day) => day.date === date);
   const timelineItems = useMemo(
@@ -426,9 +431,9 @@ export default function TimelineScreen() {
                   style={[
                     styles.listCheckButton,
                     isDone ? styles.listCheckButtonDone : null,
-                    !canCheck || checkMutation.isPending ? styles.checkButtonDisabled : null
+                    !canCheck || isCheckBusy ? styles.checkButtonDisabled : null
                   ]}
-                  disabled={!canCheck || checkMutation.isPending}
+                  disabled={!canCheck || isCheckBusy}
                   onPress={() => toggleCheck(item.habitId, isDone)}>
                   <Ionicons
                     name={isDone ? "checkmark" : "ellipse-outline"}
@@ -565,10 +570,10 @@ export default function TimelineScreen() {
                         activeOpacity={0.85}
                         style={[
                           styles.checkButton,
-                          !canCheck || checkMutation.isPending ? styles.checkButtonDisabled : null,
+                          !canCheck || isCheckBusy ? styles.checkButtonDisabled : null,
                           visiblePopoverItem.item.checkedAt ? styles.checkButtonDone : null
                         ]}
-                        disabled={!canCheck || checkMutation.isPending}
+                        disabled={!canCheck || isCheckBusy}
                         onPress={() => toggleCheck(visiblePopoverItem.item.habitId, !!visiblePopoverItem.item.checkedAt)}>
                         <Text style={styles.checkButtonText}>{visiblePopoverItem.item.checkedAt ? "Undo" : "Check"}</Text>
                       </TouchableOpacity>

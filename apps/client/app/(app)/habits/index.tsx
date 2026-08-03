@@ -6,6 +6,7 @@ import { getApiErrorMessage } from "@/src/api/error";
 import { useDeleteHabitMutation, useHabitsQuery, useToggleHabitMutation } from "@/src/habits/queries";
 import { colors } from "@/src/theme";
 import { confirmAsync } from "@/src/ui/confirm";
+import { useGuardedNavigation, useGuardedPress } from "@/src/ui/press-guard";
 import { Screen } from "@/src/ui/screen";
 
 export default function HabitsScreen() {
@@ -21,10 +22,51 @@ export default function HabitsScreen() {
   const toggleHabitMutation = useToggleHabitMutation();
   const deleteHabitMutation = useDeleteHabitMutation();
 
+  const createHabit = useGuardedNavigation(() => router.push("/(app)/habits/new"));
+  const openHabit = useGuardedNavigation((id: string) =>
+    router.push({ pathname: "/(app)/habits/[id]", params: { id } })
+  );
+
+  const { onPress: toggleHabit, isRunning: isTogglingHabit } = useGuardedPress(
+    async (habitId: string) => {
+      try {
+        await toggleHabitMutation.mutateAsync(habitId);
+      } catch (error) {
+        Alert.alert("Unable to update habit", getApiErrorMessage(error));
+      }
+    }
+  );
+
+  // A confirmação é aguardada dentro da trava de propósito: sem ela, o segundo
+  // toque abriria um segundo diálogo (a mutation ainda nem começou, então
+  // `isPending` continua falso enquanto o diálogo está aberto).
+  const { onPress: deleteHabit, isRunning: isDeletingHabit } = useGuardedPress(
+    async (habitId: string, habitName: string) => {
+      const confirmed = await confirmAsync({
+        title: "Delete habit",
+        message: `Are you sure? All history for ${habitName} will be deleted too. If you want to keep this data, deactivate the habit instead.`,
+        confirmText: "Delete",
+        destructive: true
+      });
+
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        await deleteHabitMutation.mutateAsync(habitId);
+      } catch (error) {
+        Alert.alert("Unable to delete habit", getApiErrorMessage(error));
+      }
+    }
+  );
+
+  const isHabitActionBusy = isTogglingHabit || isDeletingHabit;
+
   return (
     <Screen title="Habits" subtitle="Manage your routines">
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.createButton} onPress={() => router.push("/(app)/habits/new")}>
+        <TouchableOpacity style={styles.createButton} onPress={createHabit}>
           <Text style={styles.createButtonText}>+ Create habit</Text>
         </TouchableOpacity>
       </View>
@@ -58,7 +100,7 @@ export default function HabitsScreen() {
           <View style={styles.card}>
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={() => router.push({ pathname: "/(app)/habits/[id]", params: { id: item.id } })}>
+              onPress={() => openHabit(item.id)}>
               <Text style={styles.cardTitle}>{item.emoji} {item.name}</Text>
               {item.description ? <Text style={styles.cardDescription}>{item.description}</Text> : null}
               <Text style={styles.cardStatus}>{item.isActive ? "Active" : "Inactive"}</Text>
@@ -68,40 +110,31 @@ export default function HabitsScreen() {
               <TouchableOpacity
                 activeOpacity={0.85}
                 style={[styles.actionButton, styles.secondaryActionButton]}
-                onPress={() => router.push({ pathname: "/(app)/habits/[id]", params: { id: item.id } })}>
+                onPress={() => openHabit(item.id)}>
                 <Text style={styles.secondaryActionButtonText}>Edit</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 activeOpacity={0.85}
-                style={[styles.actionButton, styles.secondaryActionButton]}
-                disabled={toggleHabitMutation.isPending || deleteHabitMutation.isPending}
-                onPress={() => {
-                  toggleHabitMutation.mutate(item.id, {
-                    onError: (error) => Alert.alert("Unable to update habit", getApiErrorMessage(error))
-                  });
-                }}>
+                style={[
+                  styles.actionButton,
+                  styles.secondaryActionButton,
+                  isHabitActionBusy ? styles.actionButtonDisabled : null
+                ]}
+                disabled={isHabitActionBusy}
+                onPress={() => toggleHabit(item.id)}>
                 <Text style={styles.secondaryActionButtonText}>{item.isActive ? "Inactivate" : "Activate"}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 activeOpacity={0.85}
-                style={[styles.actionButton, styles.dangerActionButton]}
-                disabled={deleteHabitMutation.isPending || toggleHabitMutation.isPending}
-                onPress={async () => {
-                  const confirmed = await confirmAsync({
-                    title: "Delete habit",
-                    message: `Are you sure? All history for ${item.name} will be deleted too. If you want to keep this data, deactivate the habit instead.`,
-                    confirmText: "Delete",
-                    destructive: true
-                  });
-                  if (!confirmed) {
-                    return;
-                  }
-                  deleteHabitMutation.mutate(item.id, {
-                    onError: (error) => Alert.alert("Unable to delete habit", getApiErrorMessage(error))
-                  });
-                }}>
+                style={[
+                  styles.actionButton,
+                  styles.dangerActionButton,
+                  isHabitActionBusy ? styles.actionButtonDisabled : null
+                ]}
+                disabled={isHabitActionBusy}
+                onPress={() => deleteHabit(item.id, item.name)}>
                 <Text style={styles.dangerActionButtonText}>Delete</Text>
               </TouchableOpacity>
             </View>
@@ -176,6 +209,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8
+  },
+  actionButtonDisabled: {
+    opacity: 0.5
   },
   secondaryActionButton: {
     borderWidth: 1,

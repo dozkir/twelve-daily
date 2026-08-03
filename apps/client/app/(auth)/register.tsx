@@ -1,5 +1,5 @@
 import { Link, router } from "expo-router";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { z } from "zod";
@@ -10,6 +10,7 @@ import { getApiErrorMessage } from "@/src/api/error";
 import { colors } from "@/src/theme";
 import { getDeviceTimezone } from "@/src/timezones";
 import { FormInput } from "@/src/ui/form-input";
+import { useGuardedPress } from "@/src/ui/press-guard";
 import { Screen } from "@/src/ui/screen";
 import { TimezoneSelect } from "@/src/ui/timezone-select";
 
@@ -24,34 +25,25 @@ type RegisterValues = z.infer<typeof schema>;
 export default function RegisterScreen() {
   const { register } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  // `formState.isSubmitting` só desabilita o botão no render seguinte, então
-  // toques em sequência rápida ainda chegariam aqui e disparariam vários cadastros.
-  // Esta trava é síncrona e fecha essa janela.
-  const isSubmittingRef = useRef(false);
   const timezone = getDeviceTimezone();
 
-  const { control, handleSubmit, formState } = useForm<RegisterValues>({
+  const { control, handleSubmit } = useForm<RegisterValues>({
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "", timezone }
   });
 
-  const submit = handleSubmit(async (values) => {
-    if (isSubmittingRef.current) {
-      return;
-    }
+  const { onPress: submit, isRunning: isSubmitting } = useGuardedPress(
+    handleSubmit(async (values) => {
+      setSubmitError(null);
 
-    isSubmittingRef.current = true;
-    setSubmitError(null);
-
-    try {
-      await register(values);
-      router.replace("/(app)/timeline");
-    } catch (error) {
-      setSubmitError(getApiErrorMessage(error));
-    } finally {
-      isSubmittingRef.current = false;
-    }
-  });
+      try {
+        await register(values);
+        router.replace("/(app)/timeline");
+      } catch (error) {
+        setSubmitError(getApiErrorMessage(error));
+      }
+    })
+  );
 
   return (
     <Screen title="Create account" subtitle="Start your routine with Twelve Daily">
@@ -60,11 +52,11 @@ export default function RegisterScreen() {
       <TimezoneSelect control={control} name="timezone" label="Timezone" />
 
       <TouchableOpacity
-        style={[styles.button, formState.isSubmitting ? styles.buttonDisabled : null]}
+        style={[styles.button, isSubmitting ? styles.buttonDisabled : null]}
         onPress={submit}
-        disabled={formState.isSubmitting}>
+        disabled={isSubmitting}>
         <Text style={styles.buttonText}>
-          {formState.isSubmitting ? "Creating..." : "Create account"}
+          {isSubmitting ? "Creating..." : "Create account"}
         </Text>
       </TouchableOpacity>
 
